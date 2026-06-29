@@ -45,4 +45,6 @@ def chat(request: ChatRequest) -> ChatResponse:
         )
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+        import logging
+        logging.getLogger("supplylens").exception("chat endpoint failed")
+        raise HTTPException(status_code=500, detail="AI request failed. Please try again.")
