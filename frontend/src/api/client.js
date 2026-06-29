@@ -1,0 +1,48 @@
+const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+
+export async function fetchDashboardStats() {
+  const res = await fetch(`${BASE_URL}/dashboard-stats`);
+  if (!res.ok) throw new Error("Failed to fetch dashboard stats");
+  return res.json();
+}
+
+export async function fetchTopRisks(limit = 10) {
+  const res = await fetch(`${BASE_URL}/top-risks?limit=${limit}`);
+  if (!res.ok) throw new Error("Failed to fetch top risks");
+  return res.json();
+}
+
+export async function fetchRiskSummary({ site, risk_level, category } = {}) {
+  const params = new URLSearchParams();
+  if (site) params.append("site", site);
+  if (risk_level) params.append("risk_level", risk_level);
+  if (category) params.append("category", category);
+  const res = await fetch(`${BASE_URL}/risk-summary?${params}`);
+  if (!res.ok) throw new Error("Failed to fetch risk summary");
+  return res.json();
+}
+
+export async function fetchRiskBySite() {
+  const res = await fetch(`${BASE_URL}/risk-by-site`);
+  if (!res.ok) throw new Error("Failed to fetch site risk data");
+  return res.json();
+}
+
+export async function fetchSuppliers() {
+  const res = await fetch(`${BASE_URL}/suppliers`);
+  if (!res.ok) throw new Error("Failed to fetch suppliers");
+  return res.json();
+}
+
+export async function sendChatMessage(message, conversationHistory) {
+  const res = await fetch(`${BASE_URL}/chat`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      message,
+      conversation_history: conversationHistory,
+    }),
+  });
+  if (!res.ok) throw new Error("Failed to get AI response");
+  return res.json();
+}
