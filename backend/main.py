@@ -3,7 +3,7 @@ FastAPI application entry point.
 """
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from routers import risk, suppliers, dashboard, chat, inventory, hedging
+from routers import risk, suppliers, dashboard, chat, inventory, hedging, actions, ai
 
 app = FastAPI(
     title="SupplyLens API",
@@ -30,6 +30,8 @@ app.include_router(dashboard.router, prefix="/api")
 app.include_router(chat.router, prefix="/api")
 app.include_router(inventory.router, prefix="/api")
 app.include_router(hedging.router, prefix="/api")
+app.include_router(actions.router, prefix="/api")
+app.include_router(ai.router, prefix="/api")
 
 @app.get("/")
 def health_check():
