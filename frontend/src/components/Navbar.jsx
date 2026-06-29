@@ -1,6 +1,10 @@
 import { NavLink } from "react-router-dom";
 
 const groups = [
+  { label: "Ops", items: [
+    { path: "/today", label: "Today" },
+    { path: "/actions", label: "Actions" },
+  ]},
   { label: "Inventory Engine", items: [
     { path: "/inventory", label: "Overview" },
     { path: "/inventory/parts", label: "Parts" },

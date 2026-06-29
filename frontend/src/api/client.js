@@ -103,3 +103,37 @@ export async function importParts(file) {
   if (!res.ok) throw new Error("Import failed");
   return res.json();
 }
+
+// ── Decision engine + AI copilot ──────────────────────────────────
+export async function fetchToday() {
+  const res = await fetch(`${BASE_URL}/today`);
+  if (!res.ok) throw new Error("Failed to fetch today");
+  return res.json();
+}
+
+export async function fetchBriefing() {
+  const res = await fetch(`${BASE_URL}/ai/briefing`);
+  if (!res.ok) throw new Error("Failed to fetch briefing");
+  return res.json();
+}
+
+export async function explainDecision(sku, site) {
+  const res = await fetch(`${BASE_URL}/explain-decision?sku=${sku}&site=${site}`);
+  if (!res.ok) throw new Error("Failed to explain");
+  return res.json();
+}
+
+export async function executeAction(kind, payload) {
+  const ep = kind === "REBALANCE" ? "transfer" : "create-po";
+  const res = await fetch(`${BASE_URL}/actions/${ep}`, {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error("Action failed");
+  return res.json();
+}
+
+export async function fetchActions() {
+  const res = await fetch(`${BASE_URL}/actions/status`);
+  if (!res.ok) throw new Error("Failed to fetch actions");
+  return res.json();
+}

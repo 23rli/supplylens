@@ -8,6 +8,9 @@ import PartsTable from "./pages/PartsTable";
 import PartDetail from "./pages/PartDetail";
 import WorstOffenders from "./pages/WorstOffenders";
 import Hedging from "./pages/Hedging";
+import Today from "./pages/Today";
+import DecisionView from "./pages/DecisionView";
+import Actions from "./pages/Actions";
 
 export default function App() {
   return (
@@ -16,7 +19,10 @@ export default function App() {
         <Navbar />
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <Routes>
-            <Route path="/" element={<Navigate to="/inventory" replace />} />
+            <Route path="/" element={<Navigate to="/today" replace />} />
+            <Route path="/today" element={<Today />} />
+            <Route path="/decision/:sku/:site" element={<DecisionView />} />
+            <Route path="/actions" element={<Actions />} />
             <Route path="/inventory" element={<InventoryOverview />} />
             <Route path="/inventory/parts" element={<PartsTable />} />
             <Route path="/inventory/parts/:partNumber" element={<PartDetail />} />
