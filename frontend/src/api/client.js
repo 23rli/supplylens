@@ -46,3 +46,38 @@ export async function sendChatMessage(message, conversationHistory) {
   if (!res.ok) throw new Error("Failed to get AI response");
   return res.json();
 }
+
+// ── Inventory Engine ──────────────────────────────────────────────
+export async function fetchInventoryStats() {
+  const res = await fetch(`${BASE_URL}/inventory/stats`);
+  if (!res.ok) throw new Error("Failed to fetch inventory stats");
+  return res.json();
+}
+
+export async function fetchParts({ abc, vendor, status } = {}) {
+  const params = new URLSearchParams();
+  if (abc) params.append("abc", abc);
+  if (vendor) params.append("vendor", vendor);
+  if (status) params.append("status", status);
+  const res = await fetch(`${BASE_URL}/inventory/parts?${params}`);
+  if (!res.ok) throw new Error("Failed to fetch parts");
+  return res.json();
+}
+
+export async function fetchPartDetail(partNumber) {
+  const res = await fetch(`${BASE_URL}/inventory/part/${partNumber}`);
+  if (!res.ok) throw new Error("Failed to fetch part");
+  return res.json();
+}
+
+export async function fetchWorstOffenders(kind = "over", limit = 15) {
+  const res = await fetch(`${BASE_URL}/inventory/worst?kind=${kind}&limit=${limit}`);
+  if (!res.ok) throw new Error("Failed to fetch worst offenders");
+  return res.json();
+}
+
+export async function fetchWarehouseLoad() {
+  const res = await fetch(`${BASE_URL}/inventory/warehouse-load`);
+  if (!res.ok) throw new Error("Failed to fetch warehouse load");
+  return res.json();
+}
