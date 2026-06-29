@@ -1,30 +1,44 @@
 """
-MySQL connection and all database query functions.
+Azure SQL Database connection and all query functions.
 All SQL queries live here — never in the routers.
 """
-import mysql.connector
-from mysql.connector import Error
+import pyodbc
 from dotenv import load_dotenv
 import os
 
 load_dotenv()
 
+# CASE expression used to order rows CRITICAL -> LOW (replaces MySQL FIELD()).
+_RISK_ORDER = """
+    CASE risk_level
+      WHEN 'CRITICAL' THEN 0 WHEN 'HIGH' THEN 1
+      WHEN 'MEDIUM' THEN 2 ELSE 3 END, buffer_days ASC
+"""
+
 def get_connection():
-    """Returns a MySQL connection. Raises on failure."""
-    return mysql.connector.connect(
-        host=os.getenv("MYSQL_HOST", "localhost"),
-        port=int(os.getenv("MYSQL_PORT", 3306)),
-        user=os.getenv("MYSQL_USER", "root"),
-        password=os.getenv("MYSQL_PASSWORD", ""),
-        database=os.getenv("MYSQL_DATABASE", "supplylens")
+    """Returns a pyodbc connection to Azure SQL. Raises on failure."""
+    server = os.getenv("AZURE_SQL_SERVER", "localhost")
+    database = os.getenv("AZURE_SQL_DATABASE", "supplylens")
+    user = os.getenv("AZURE_SQL_USER", "")
+    password = os.getenv("AZURE_SQL_PASSWORD", "")
+    driver = os.getenv("AZURE_SQL_DRIVER", "ODBC Driver 18 for SQL Server")
+    conn_str = (
+        f"DRIVER={{{driver}}};SERVER={server};DATABASE={database};"
+        f"UID={user};PWD={password};Encrypt=yes;TrustServerCertificate=no;"
+        "Connection Timeout=30;"
     )
+    return pyodbc.connect(conn_str)
+
+def _rows_to_dicts(cursor) -> list[dict]:
+    cols = [c[0] for c in cursor.description]
+    return [dict(zip(cols, row)) for row in cursor.fetchall()]
 
 def fetch_all(query: str, params: tuple = None) -> list[dict]:
     """Execute a SELECT query and return list of dicts."""
     conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor()
     cursor.execute(query, params or ())
-    results = cursor.fetchall()
+    results = _rows_to_dicts(cursor)
     cursor.close()
     conn.close()
     return results
@@ -32,9 +46,11 @@ def fetch_all(query: str, params: tuple = None) -> list[dict]:
 def fetch_one(query: str, params: tuple = None) -> dict | None:
     """Execute a SELECT query and return one dict or None."""
     conn = get_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor()
     cursor.execute(query, params or ())
-    result = cursor.fetchone()
+    cols = [c[0] for c in cursor.description]
+    row = cursor.fetchone()
+    result = dict(zip(cols, row)) if row else None
     cursor.close()
     conn.close()
     return result
@@ -46,43 +62,27 @@ def get_risk_summary(site: str = None, risk_level: str = None, category: str = N
     Returns all SKUs from sku_risk_summary view with optional filters.
     Ordered by risk level (CRITICAL first) then buffer_days ascending.
     """
-    query = """
-        SELECT * FROM sku_risk_summary
-        WHERE 1=1
-    """
+    query = "SELECT * FROM sku_risk_summary WHERE 1=1"
     params = []
     if site:
-        query += " AND site_id = %s"
+        query += " AND site_id = ?"
         params.append(site)
     if risk_level:
-        query += " AND risk_level = %s"
+        query += " AND risk_level = ?"
         params.append(risk_level)
     if category:
-        query += " AND category = %s"
+        query += " AND category = ?"
         params.append(category)
-    query += """
-        ORDER BY
-          FIELD(risk_level, 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'),
-          buffer_days ASC
-    """
+    query += f" ORDER BY {_RISK_ORDER}"
     return fetch_all(query, tuple(params))
 
 def get_top_risks(limit: int = 10) -> list[dict]:
     """Returns the top N highest-risk SKUs across all sites."""
-    query = """
-        SELECT * FROM sku_risk_summary
-        ORDER BY
-          FIELD(risk_level, 'CRITICAL', 'HIGH', 'MEDIUM', 'LOW'),
-          buffer_days ASC
-        LIMIT %s
-    """
+    query = f"SELECT TOP (?) * FROM sku_risk_summary ORDER BY {_RISK_ORDER}"
     return fetch_all(query, (limit,))
 
 def get_risk_counts_by_site() -> list[dict]:
-    """
-    Returns risk level counts grouped by site.
-    Used for the heatmap component.
-    """
+    """Returns risk level counts grouped by site. Used for the heatmap component."""
     query = """
         SELECT
           site_id,
@@ -100,13 +100,11 @@ def get_risk_counts_by_site() -> list[dict]:
 # ── Dashboard queries ─────────────────────────────────────────────────────────
 
 def get_dashboard_stats() -> dict:
-    """
-    Returns 4 headline KPI numbers for the KPIBar component.
-    """
+    """Returns 4 headline KPI numbers for the KPIBar component."""
     critical = fetch_one("SELECT COUNT(*) AS count FROM sku_risk_summary WHERE risk_level = 'CRITICAL'")
     high = fetch_one("SELECT COUNT(*) AS count FROM sku_risk_summary WHERE risk_level = 'HIGH'")
     avg_supply = fetch_one("SELECT ROUND(AVG(days_of_supply), 1) AS avg FROM sku_risk_summary")
-    supplier_avg = fetch_one("SELECT ROUND(AVG(on_time_delivery_rate) * 100, 1) AS rate FROM suppliers WHERE active = TRUE")
+    supplier_avg = fetch_one("SELECT ROUND(AVG(on_time_delivery_rate) * 100, 1) AS rate FROM suppliers WHERE active = 1")
 
     return {
         "critical_skus": critical["count"] if critical else 0,
@@ -118,20 +116,20 @@ def get_dashboard_stats() -> dict:
 # ── Supplier queries ──────────────────────────────────────────────────────────
 
 def get_suppliers() -> list[dict]:
-    """
-    Returns all active suppliers enriched with incident count (last 12 months).
-    """
+    """Returns all active suppliers enriched with incident count (last 12 months)."""
     query = """
         SELECT
-          s.*,
+          s.supplier_id, s.supplier_name, s.country, s.category, s.contract_tier,
+          s.avg_lead_time_days, s.on_time_delivery_rate, s.quality_score, s.active,
           COUNT(si.id) AS incident_count_12m,
           COALESCE(SUM(si.days_delayed), 0) AS total_days_delayed_12m
         FROM suppliers s
         LEFT JOIN supplier_incidents si
           ON s.supplier_id = si.supplier_id
-          AND si.incident_date >= DATE_SUB(CURDATE(), INTERVAL 12 MONTH)
-        WHERE s.active = TRUE
-        GROUP BY s.supplier_id
+          AND si.incident_date >= DATEADD(MONTH, -12, CAST(GETDATE() AS DATE))
+        WHERE s.active = 1
+        GROUP BY s.supplier_id, s.supplier_name, s.country, s.category, s.contract_tier,
+                 s.avg_lead_time_days, s.on_time_delivery_rate, s.quality_score, s.active
         ORDER BY s.on_time_delivery_rate DESC
     """
     return fetch_all(query)
@@ -141,7 +139,7 @@ def get_supplier_incidents(supplier_id: str = None) -> list[dict]:
     query = "SELECT * FROM supplier_incidents WHERE 1=1"
     params = []
     if supplier_id:
-        query += " AND supplier_id = %s"
+        query += " AND supplier_id = ?"
         params.append(supplier_id)
     query += " ORDER BY incident_date DESC"
     return fetch_all(query, tuple(params))
@@ -156,11 +154,10 @@ def get_ai_context() -> dict:
     risk_data = get_risk_summary()
     supplier_data = get_suppliers()
     incidents = fetch_all("""
-        SELECT si.*, s.supplier_name
+        SELECT TOP (10) si.*, s.supplier_name
         FROM supplier_incidents si
         JOIN suppliers s ON si.supplier_id = s.supplier_id
         ORDER BY si.incident_date DESC
-        LIMIT 10
     """)
     stats = get_dashboard_stats()
 

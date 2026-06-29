@@ -1,23 +1,27 @@
 """
-Imports generated CSV files into MySQL.
+Imports generated CSV files into Azure SQL Database.
 Run after seed_data.py and after creating schema.
 Usage: python import_data.py
 """
 import csv
-import mysql.connector
+import pyodbc
 from dotenv import load_dotenv
 import os
 
 load_dotenv(dotenv_path="../.env")
 
 def get_conn():
-    return mysql.connector.connect(
-        host=os.getenv("MYSQL_HOST", "localhost"),
-        port=int(os.getenv("MYSQL_PORT", 3306)),
-        user=os.getenv("MYSQL_USER", "root"),
-        password=os.getenv("MYSQL_PASSWORD", ""),
-        database=os.getenv("MYSQL_DATABASE", "supplylens")
+    server = os.getenv("AZURE_SQL_SERVER", "localhost")
+    database = os.getenv("AZURE_SQL_DATABASE", "supplylens")
+    user = os.getenv("AZURE_SQL_USER", "")
+    password = os.getenv("AZURE_SQL_PASSWORD", "")
+    driver = os.getenv("AZURE_SQL_DRIVER", "ODBC Driver 18 for SQL Server")
+    conn_str = (
+        f"DRIVER={{{driver}}};SERVER={server};DATABASE={database};"
+        f"UID={user};PWD={password};Encrypt=yes;TrustServerCertificate=no;"
+        "Connection Timeout=30;"
     )
+    return pyodbc.connect(conn_str)
 
 def import_suppliers():
     with open("suppliers.csv") as f:
@@ -30,7 +34,7 @@ def import_suppliers():
             INSERT INTO suppliers 
             (supplier_id, supplier_name, country, category, contract_tier, 
              avg_lead_time_days, on_time_delivery_rate, quality_score)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s)
+            VALUES (?,?,?,?,?,?,?,?)
         """, (r["supplier_id"], r["supplier_name"], r["country"], r["category"],
               r["contract_tier"], int(r["avg_lead_time_days"]),
               float(r["on_time_delivery_rate"]), float(r["quality_score"])))
@@ -49,7 +53,7 @@ def import_inventory():
             INSERT INTO inventory_snapshots
             (sku_id, sku_name, site_id, category, current_stock, reorder_point,
              avg_daily_demand, lead_time_days, primary_supplier_id, unit_cost)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            VALUES (?,?,?,?,?,?,?,?,?,?)
         """, (r["sku_id"], r["sku_name"], r["site_id"], r["category"],
               int(r["current_stock"]), int(r["reorder_point"]),
               float(r["avg_daily_demand"]), int(r["lead_time_days"]),
@@ -69,7 +73,7 @@ def import_orders():
             INSERT INTO orders_history
             (sku_id, site_id, order_date, quantity_ordered, quantity_received,
              supplier_id, expected_delivery, actual_delivery, status)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s)
+            VALUES (?,?,?,?,?,?,?,?,?)
         """, (r["sku_id"], r["site_id"], r["order_date"],
               int(r["quantity_ordered"]), int(r["quantity_received"]),
               r["supplier_id"], r["expected_delivery"],
@@ -89,7 +93,7 @@ def import_incidents():
             INSERT INTO supplier_incidents
             (supplier_id, incident_date, incident_type, affected_skus,
              severity, resolution_notes, days_delayed)
-            VALUES (%s,%s,%s,%s,%s,%s,%s)
+            VALUES (?,?,?,?,?,?,?)
         """, (r["supplier_id"], r["incident_date"], r["incident_type"],
               r["affected_skus"], r["severity"], r["resolution_notes"],
               int(r["days_delayed"])))
@@ -98,7 +102,7 @@ def import_incidents():
     cursor.close(); conn.close()
 
 if __name__ == "__main__":
-    print("Importing data into MySQL...")
+    print("Importing data into Azure SQL...")
     import_suppliers()
     import_inventory()
     import_orders()
