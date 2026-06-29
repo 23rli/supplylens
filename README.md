@@ -1,17 +1,51 @@
 # SupplyLens
 
-Supply Chain Risk Intelligence Platform for medical device distribution. SKU-level stockout risk, supplier reliability scores, and an AI analyst grounded on live data — powered by **Azure SQL Database** and **Azure OpenAI**.
+**Supply Chain Risk Intelligence Platform for medical device distribution.**
 
-The AI layer never answers from general knowledge alone: every chat request pulls live inventory, supplier, and incident data from Azure SQL and injects it into the system prompt before calling Azure OpenAI.
+SupplyLens is a decision-support system — not a general chatbot — that consolidates inventory, supplier performance, and incident history into one control tower, and layers an AI analyst on top that answers operational questions and recommends ranked actions, grounded exclusively in live operational data.
+
+A stockout of surgical gloves, IV catheters, or sterile drapes doesn't just lose a sale — it delays procedures and damages hospital relationships worth millions. SupplyLens shifts risk management from **reactive** (discover stockouts after they happen) to **proactive** (surface risk before the lead-time window closes).
+
+## Who it's for
+- **Operations Manager** — morning dashboard showing exactly what needs attention today; cuts a 2-hour ERP pull to a sub-60-second review.
+- **Procurement Buyer** — supplier health and incident history at the point of decision; fewer reactive emergency orders.
+- **Site Manager** — site-filtered risk view and rebalancing questions ("what can I pull from Chicago to cover Boston this week?").
+
+## What it does
+1. **Risk synthesis** — multi-dimensional CRITICAL/HIGH/MEDIUM/LOW score per SKU per site from stock, demand, lead time, criticality, and supplier reliability.
+2. **Supplier intelligence** — live on-time rates, lead times, contract tier, and 12-month incident history surfaced at the point of decision.
+3. **AI decision support** — every chat query injects live data into the prompt, so answers are computed from real inventory state, never hallucinated. Recommendations are ranked: EXPEDITE / REBALANCE / SUBSTITUTE / STANDARD ORDER / DEFER.
+
+## Risk scoring
+- **Days of Supply** = Current Stock ÷ Avg Daily Demand
+- **Buffer Days** = Days of Supply − Lead Time (negative = stockout is inevitable without emergency action)
+
+| Risk | Condition | Meaning |
+|---|---|---|
+| CRITICAL | Days of Supply ≤ Lead Time | Stockout before next delivery |
+| HIGH | ≤ Lead Time × 1.5 | Must order now |
+| MEDIUM | ≤ Lead Time × 2.0 | Monitor closely |
+| LOW | > Lead Time × 2.0 | Healthy buffer |
 
 ## Stack
 - **Backend:** FastAPI + Azure SQL Database (pyodbc) + Azure OpenAI
 - **Frontend:** React 18 (Vite) + Tailwind CSS + Recharts
 - **Domain:** 3 sites (Boston, Chicago, Seattle), 30 SKUs, 8 suppliers
 
+## Modules
+- **Inventory Engine** — 52-week over/understock simulation (~2,500 parts), worst-offender action lists, warehouse pallet load, CSV/XLSX part import. (`/inventory`)
+- **Hedging Planner** — commodity procurement: hedged vs spot-only, strategy split, Amount Saved KPI, Prophet-style price forecast. (`/hedging`)
+- **Risk** — SKU stockout risk + supplier reliability for medical-device distribution. (`/dashboard`)
+- **AI Analyst** — grounded across all modules' live data. (`/chat`)
+
+## Forecasting
+The hedging price forecaster (per A9) uses **Prophet** when installed; otherwise a numpy trend + yearly/quarterly seasonality fallback with IQR outlier removal — same monthly first/avg/max/min interface. Prophet is optional (heavy build; skip on ARM64).
+
+## Local dev (no Azure required)
+SQLite runs the platform out of the box: `DB_BACKEND=sqlite` (default). Seed parts with `python backend/inventory/seed_parts.py`. Set `DB_BACKEND=azure` for production.
+
 ## Prerequisites
-- Python 3.11+
-- Node.js 18+
+- Python 3.11+ · Node.js 18+
 - [ODBC Driver 18 for SQL Server](https://learn.microsoft.com/sql/connect/odbc/download-odbc-driver-for-sql-server)
 - An Azure SQL Database instance
 - An Azure OpenAI resource with a deployed model (e.g. `gpt-4o`)
@@ -19,7 +53,6 @@ The AI layer never answers from general knowledge alone: every chat request pull
 ## Setup
 
 ### 1. Database — Azure SQL
-Create the schema against your Azure SQL Database (server admin login):
 ```bash
 sqlcmd -S your-server.database.windows.net -d supplylens -U <admin> -P <password> -i backend/schema.sql
 ```
@@ -74,3 +107,6 @@ The frontend reads `VITE_API_URL` from `frontend/.env.local` (defaults to `http:
 - `POST /api/chat` — AI analyst, grounded on live data
 
 Health check: `curl http://localhost:8000/api/dashboard-stats`
+
+## Known V1 limitations
+- Uses average demand (no variance/seasonality), ignores in-transit POs, treats sites independently, and prioritizes by operational severity not cost. See the business doc for the V1.5–V3 roadmap.

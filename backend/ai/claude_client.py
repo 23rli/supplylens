@@ -1,7 +1,6 @@
 """
 Wrapper for Azure OpenAI chat completions.
 """
-from openai import AzureOpenAI
 from dotenv import load_dotenv
 import os
 
@@ -19,6 +18,7 @@ def call_claude(system_prompt: str, messages: list[dict]) -> str:
     Returns:
         The assistant's response as a string.
     """
+    from openai import AzureOpenAI
     client = AzureOpenAI(
         azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
         api_key=os.getenv("AZURE_OPENAI_API_KEY"),

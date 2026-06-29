@@ -1,12 +1,8 @@
 """
-Azure SQL Database connection and all query functions.
+Risk/supplier query layer. Uses the shared db backend (SQLite local / Azure prod).
 All SQL queries live here — never in the routers.
 """
-import pyodbc
-from dotenv import load_dotenv
-import os
-
-load_dotenv()
+from db import fetch_all, fetch_one
 
 # CASE expression used to order rows CRITICAL -> LOW (replaces MySQL FIELD()).
 _RISK_ORDER = """
@@ -14,48 +10,6 @@ _RISK_ORDER = """
       WHEN 'CRITICAL' THEN 0 WHEN 'HIGH' THEN 1
       WHEN 'MEDIUM' THEN 2 ELSE 3 END, buffer_days ASC
 """
-
-def get_connection():
-    """Returns a pyodbc connection to Azure SQL. Raises on failure."""
-    server = os.getenv("AZURE_SQL_SERVER", "localhost")
-    database = os.getenv("AZURE_SQL_DATABASE", "supplylens")
-    user = os.getenv("AZURE_SQL_USER", "")
-    password = os.getenv("AZURE_SQL_PASSWORD", "")
-    driver = os.getenv("AZURE_SQL_DRIVER", "ODBC Driver 18 for SQL Server")
-    conn_str = (
-        f"DRIVER={{{driver}}};SERVER={server};DATABASE={database};"
-        f"UID={user};PWD={password};Encrypt=yes;TrustServerCertificate=no;"
-        "Connection Timeout=30;"
-    )
-    return pyodbc.connect(conn_str)
-
-def _rows_to_dicts(cursor) -> list[dict]:
-    cols = [c[0] for c in cursor.description]
-    return [dict(zip(cols, row)) for row in cursor.fetchall()]
-
-def fetch_all(query: str, params: tuple = None) -> list[dict]:
-    """Execute a SELECT query and return list of dicts."""
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute(query, params or ())
-    results = _rows_to_dicts(cursor)
-    cursor.close()
-    conn.close()
-    return results
-
-def fetch_one(query: str, params: tuple = None) -> dict | None:
-    """Execute a SELECT query and return one dict or None."""
-    conn = get_connection()
-    cursor = conn.cursor()
-    cursor.execute(query, params or ())
-    cols = [c[0] for c in cursor.description]
-    row = cursor.fetchone()
-    result = dict(zip(cols, row)) if row else None
-    cursor.close()
-    conn.close()
-    return result
-
-# ── Risk queries ──────────────────────────────────────────────────────────────
 
 def get_risk_summary(site: str = None, risk_level: str = None, category: str = None) -> list[dict]:
     """
@@ -148,22 +102,40 @@ def get_supplier_incidents(supplier_id: str = None) -> list[dict]:
 
 def get_ai_context() -> dict:
     """
-    Pulls all data needed to build the AI system prompt.
-    Returns a dict with risk_summary, suppliers, and recent_incidents.
+    Pulls all data needed to build the AI system prompt across every module.
+    Resilient: any module that isn't seeded is skipped.
     """
-    risk_data = get_risk_summary()
-    supplier_data = get_suppliers()
-    incidents = fetch_all("""
-        SELECT TOP (10) si.*, s.supplier_name
-        FROM supplier_incidents si
-        JOIN suppliers s ON si.supplier_id = s.supplier_id
-        ORDER BY si.incident_date DESC
-    """)
-    stats = get_dashboard_stats()
+    risk_data, supplier_data, incidents, stats = [], [], [], {}
+    try:
+        risk_data = get_risk_summary()
+        supplier_data = get_suppliers()
+        incidents = fetch_all("""
+            SELECT TOP (10) si.*, s.supplier_name
+            FROM supplier_incidents si
+            JOIN suppliers s ON si.supplier_id = s.supplier_id
+            ORDER BY si.incident_date DESC
+        """)
+        stats = get_dashboard_stats()
+    except Exception:
+        pass
+
+    inventory_stats = hedging = {}
+    try:
+        from inventory.store import inventory_stats as inv_stats
+        inventory_stats = inv_stats()
+    except Exception:
+        pass
+    try:
+        from hedging.store import run_scenario
+        hedging = run_scenario()
+    except Exception:
+        pass
 
     return {
         "risk_summary": risk_data,
         "suppliers": supplier_data,
         "recent_incidents": incidents,
         "stats": stats,
+        "inventory": inventory_stats,
+        "hedging": hedging,
     }

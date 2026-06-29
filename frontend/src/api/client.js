@@ -81,3 +81,25 @@ export async function fetchWarehouseLoad() {
   if (!res.ok) throw new Error("Failed to fetch warehouse load");
   return res.json();
 }
+
+// ── Hedging Planner ───────────────────────────────────────────────
+export async function fetchHedgingScenario({ s1 = 0.75, s2 = 0.25, inv_cost = 0.01, start_inv = 0 } = {}) {
+  const params = new URLSearchParams({ s1, s2, inv_cost, start_inv });
+  const res = await fetch(`${BASE_URL}/hedging/scenario?${params}`);
+  if (!res.ok) throw new Error("Failed to fetch hedging scenario");
+  return res.json();
+}
+
+export async function fetchPriceForecast(oil = "OIL_1") {
+  const res = await fetch(`${BASE_URL}/hedging/forecast?oil=${oil}`);
+  if (!res.ok) throw new Error("Failed to fetch forecast");
+  return res.json();
+}
+
+export async function importParts(file) {
+  const fd = new FormData();
+  fd.append("file", file);
+  const res = await fetch(`${BASE_URL}/inventory/import`, { method: "POST", body: fd });
+  if (!res.ok) throw new Error("Import failed");
+  return res.json();
+}

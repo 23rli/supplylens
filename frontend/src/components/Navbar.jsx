@@ -6,6 +6,7 @@ const groups = [
     { path: "/inventory/parts", label: "Parts" },
     { path: "/inventory/worst", label: "Worst Offenders" },
   ]},
+  { label: "Hedging", items: [{ path: "/hedging", label: "Planner" }] },
   { label: "Risk", items: [
     { path: "/dashboard", label: "Dashboard" },
     { path: "/skus", label: "SKU Risk" },

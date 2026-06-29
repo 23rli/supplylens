@@ -119,10 +119,25 @@ RECENT SUPPLIER INCIDENTS (last 10)
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 HEADLINE STATS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-- Critical risk SKU-site pairs: {stats["critical_skus"]}
-- High risk SKU-site pairs: {stats["high_risk_skus"]}
-- Average days of supply across all SKUs: {stats["avg_days_of_supply"]} days
-- Overall supplier reliability: {stats["supplier_reliability_pct"]}%
+- Critical risk SKU-site pairs: {stats.get("critical_skus", "n/a")}
+- High risk SKU-site pairs: {stats.get("high_risk_skus", "n/a")}
+- Average days of supply across all SKUs: {stats.get("avg_days_of_supply", "n/a")} days
+- Overall supplier reliability: {stats.get("supplier_reliability_pct", "n/a")}%
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+INVENTORY ENGINE (52-week simulation)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Total parts: {context.get("inventory", {}).get("total_parts", "n/a")}
+- Parts at risk of understock: {context.get("inventory", {}).get("understock_parts", "n/a")}
+- Parts at risk of overstock: {context.get("inventory", {}).get("overstock_parts", "n/a")}
+- Annual spend: ${context.get("inventory", {}).get("total_annual_spend", "n/a")}
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+HEDGING PLANNER (current scenario)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+- Amount Saved (hedged vs spot-only): ${context.get("hedging", {}).get("amount_saved", "n/a")}
+- Saved per ton: ${context.get("hedging", {}).get("saved_per_ton", "n/a")}
+- Coverage on plan: {context.get("hedging", {}).get("all_coverage_ok", "n/a")}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 RESPONSE GUIDELINES

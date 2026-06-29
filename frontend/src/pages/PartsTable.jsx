@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchParts } from "../api/client";
+import { fetchParts, importParts } from "../api/client";
 import LoadingSpinner from "../components/LoadingSpinner";
 import { useNavigate } from "react-router-dom";
 
@@ -10,6 +10,7 @@ export default function PartsTable() {
   const [parts, setParts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filters, setFilters] = useState({ abc: "", status: "" });
+  const [msg, setMsg] = useState("");
   const nav = useNavigate();
 
   useEffect(() => {
@@ -17,14 +18,32 @@ export default function PartsTable() {
     fetchParts(filters).then(setParts).finally(() => setLoading(false));
   }, [filters]);
 
+  const onImport = async (e) => {
+    const f = e.target.files?.[0];
+    if (!f) return;
+    setMsg("Importing...");
+    try {
+      const r = await importParts(f);
+      setMsg(`Imported ${r.imported} parts`);
+      setFilters((x) => ({ ...x }));
+    } catch { setMsg("Import failed — check columns"); }
+  };
+
   const sel = "bg-slate-700 border border-slate-600 text-slate-200 text-sm rounded-lg px-3 py-2";
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-100">Parts</h1>
-        <p className="text-slate-400 text-sm mt-1">{parts.length} parts · click a row for the 52-week projection</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-100">Parts</h1>
+          <p className="text-slate-400 text-sm mt-1">{parts.length} parts · click a row for the 52-week projection</p>
+        </div>
+        <label className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-medium rounded-lg cursor-pointer">
+          Import CSV/XLSX
+          <input type="file" accept=".csv,.xlsx,.xlsm" className="hidden" onChange={onImport} />
+        </label>
       </div>
+      {msg && <p className="text-sm text-slate-400">{msg}</p>}
       <div className="flex gap-3">
         <select className={sel} value={filters.abc} onChange={(e) => setFilters((f) => ({ ...f, abc: e.target.value }))}>
           {ABC.map((a) => <option key={a} value={a}>{a ? `Group ${a}` : "All ABC"}</option>)}

@@ -7,6 +7,7 @@ import InventoryOverview from "./pages/InventoryOverview";
 import PartsTable from "./pages/PartsTable";
 import PartDetail from "./pages/PartDetail";
 import WorstOffenders from "./pages/WorstOffenders";
+import Hedging from "./pages/Hedging";
 
 export default function App() {
   return (
@@ -20,6 +21,7 @@ export default function App() {
             <Route path="/inventory/parts" element={<PartsTable />} />
             <Route path="/inventory/parts/:partNumber" element={<PartDetail />} />
             <Route path="/inventory/worst" element={<WorstOffenders />} />
+            <Route path="/hedging" element={<Hedging />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/skus" element={<SKUTable />} />
             <Route path="/chat" element={<Chat />} />
