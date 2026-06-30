@@ -1,9 +1,10 @@
 """
 FastAPI application entry point.
 """
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
-from routers import risk, suppliers, dashboard, chat, inventory, hedging, actions, ai
+from routers import risk, suppliers, dashboard, chat, inventory, hedging, actions, ai, auth
+from auth.store import require_auth
 
 app = FastAPI(
     title="SupplyLens API",
@@ -24,14 +25,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(risk.router, prefix="/api")
-app.include_router(suppliers.router, prefix="/api")
-app.include_router(dashboard.router, prefix="/api")
-app.include_router(chat.router, prefix="/api")
-app.include_router(inventory.router, prefix="/api")
-app.include_router(hedging.router, prefix="/api")
-app.include_router(actions.router, prefix="/api")
-app.include_router(ai.router, prefix="/api")
+app.include_router(auth.router, prefix="/api")  # open: login + me
+
+# All data routers require a valid bearer token.
+_secure = [Depends(require_auth)]
+app.include_router(risk.router, prefix="/api", dependencies=_secure)
+app.include_router(suppliers.router, prefix="/api", dependencies=_secure)
+app.include_router(dashboard.router, prefix="/api", dependencies=_secure)
+app.include_router(chat.router, prefix="/api", dependencies=_secure)
+app.include_router(inventory.router, prefix="/api", dependencies=_secure)
+app.include_router(hedging.router, prefix="/api", dependencies=_secure)
+app.include_router(actions.router, prefix="/api", dependencies=_secure)
+app.include_router(ai.router, prefix="/api", dependencies=_secure)
 
 @app.get("/")
 def health_check():

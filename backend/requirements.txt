@@ -8,4 +8,5 @@ pytest==8.2.0
 numpy==1.26.4          # forecasting fallback
 openpyxl==3.1.2        # xlsx import
 python-multipart==0.0.9
+PyJWT==2.8.0           # auth tokens
 prophet==1.1.5         # optional: high-accuracy forecasts (heavy build)

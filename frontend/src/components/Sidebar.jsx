@@ -1,4 +1,5 @@
 import { NavLink } from "react-router-dom";
+import { useAuth } from "../auth";
 
 const sections = [
   { items: [{ to: "/today", label: "Today", icon: "home" }] },
@@ -41,6 +42,7 @@ function Icon({ name }) {
 }
 
 export default function Sidebar() {
+  const { user, signOut } = useAuth();
   return (
     <aside className="w-60 shrink-0 bg-white border-r border-surface-border flex flex-col h-screen sticky top-0">
       <div className="h-16 flex items-center gap-2.5 px-5 border-b border-surface-border">
@@ -68,7 +70,22 @@ export default function Sidebar() {
           </div>
         ))}
       </nav>
-      <div className="px-5 py-3 border-t border-surface-border text-[11px] text-ink-muted">v1.5 · Decision Engine</div>
+      <div className="px-3 py-3 border-t border-surface-border">
+        <div className="flex items-center gap-2.5 px-2 py-1.5">
+          <div className="w-8 h-8 rounded-full bg-brand-50 text-brand-700 flex items-center justify-center text-xs font-semibold shrink-0">
+            {(user?.name || user?.email || "U").slice(0, 1).toUpperCase()}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-medium text-ink truncate">{user?.name || "User"}</div>
+            <div className="text-[11px] text-ink-muted truncate">{user?.email}</div>
+          </div>
+          <button onClick={signOut} title="Sign out" className="text-ink-muted hover:text-ink p-1 rounded-md hover:bg-surface-sunken">
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />
+            </svg>
+          </button>
+        </div>
+      </div>
     </aside>
   );
 }

@@ -1,5 +1,30 @@
 const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
 
+// Auth-aware fetch: attaches the bearer token and handles expiry. Shadows the
+// global fetch for every call in this module.
+const _fetch = window.fetch.bind(window);
+export const TOKEN_KEY = "sl_token";
+function fetch(url, opts = {}) {
+  const token = localStorage.getItem(TOKEN_KEY);
+  const headers = { ...(opts.headers || {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) };
+  return _fetch(url, { ...opts, headers }).then((res) => {
+    if (res.status === 401) {
+      localStorage.removeItem(TOKEN_KEY);
+      if (!location.pathname.startsWith("/login")) location.href = "/login";
+    }
+    return res;
+  });
+}
+
+export async function login(email, password) {
+  const res = await _fetch(`${BASE_URL}/auth/login`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res.ok) throw new Error("Invalid email or password");
+  return res.json();
+}
+
 export async function fetchDashboardStats() {
   const res = await fetch(`${BASE_URL}/dashboard-stats`);
   if (!res.ok) throw new Error("Failed to fetch dashboard stats");
