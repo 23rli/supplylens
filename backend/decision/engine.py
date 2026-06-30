@@ -1,6 +1,6 @@
 """
 Decision engine: ranks fix actions for an at-risk SKU with cost/benefit/confidence.
-Pure & deterministic â€” consumes plain dicts, no DB. Doubles as the AI fallback.
+Pure & deterministic - consumes plain dicts, no DB. Doubles as the AI fallback.
 """
 from __future__ import annotations
 from dataclasses import dataclass, asdict
@@ -21,7 +21,7 @@ class Action:
 
 
 def dollars_at_risk(row: dict) -> float:
-    """Exposure if the SKU stocks out: shortfall days Ã— demand Ã— unit cost."""
+    """Exposure if the SKU stocks out: shortfall days x demand x unit cost."""
     buffer = row.get("buffer_days", 0) or 0
     if buffer >= 0:
         return 0.0

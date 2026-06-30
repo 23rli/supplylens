@@ -74,19 +74,22 @@ def simulate(part: Part, weeks: int = WEEKS) -> PartMetrics:
             if 0 <= w < weeks:
                 backlog_arrivals[w] += 1
 
-    new_arrivals = [0] * weeks
-    projection = [0.0] * weeks
+    new_arrivals = [0] * weeks      # replenishment orders this engine decides to place
+    projection = [0.0] * weeks      # projected on-hand stock at the end of each week
     projection[0] = part.on_hand
     over_ct = under_ct = 0
 
     for w in range(weeks):
+        # Roll stock forward: last week's level + arrivals (each = one EOQ) - demand.
         if w > 0:
             gain = (backlog_arrivals[w] + new_arrivals[w]) * part.eoq
             projection[w] = projection[w - 1] + gain - weekly
+        # Below safety stock -> place an order that lands after the lead time.
         if projection[w] < part.safety_stock:
             arr = w + part.lead_time_weeks
             if arr < weeks:
                 new_arrivals[arr] += 1
+        # Tally weeks spent over the overstock ceiling / under the safety floor.
         if projection[w] > overstock_point:
             over_ct += 1
         if projection[w] < part.safety_stock:

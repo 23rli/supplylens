@@ -34,22 +34,30 @@ Every AI call injects the live database state into the model prompt, so answers 
 - **Security:** JWT login, per-tenant data scoping, env-driven CORS allow-list, per-IP rate limiting
 
 ## Quick start (local, no Azure required)
-The platform runs entirely on SQLite with a deterministic AI fallback.
+
+Anyone can run the full app in about 5 minutes. You only need **Python 3.11+** and
+**Node.js 18+** installed. No cloud account, database server, or paid service is
+required — it runs on a local SQLite file, and the AI features fall back to built-in
+logic when no AI key is present.
+
+> New to the project? Follow the step-by-step [Getting Started guide](docs/getting-started.md).
 
 ```bash
-# 1. Backend
+# 1. Backend — open a terminal
 cd backend
 pip install fastapi uvicorn python-dotenv pydantic numpy openpyxl python-multipart PyJWT
-python data/seed_risk.py        # commodity/manufacturing risk + decision data
+python data/seed_risk.py        # supplier + SKU risk data
 python inventory/seed_parts.py  # 120 sample parts
-python data/seed_users.py       # demo login
+python data/seed_users.py       # creates the demo login
 uvicorn main:app --reload --port 8000
 
-# 2. Frontend (new terminal)
+# 2. Frontend — open a SECOND terminal (leave the backend running)
 cd frontend
 npm install
-npm run dev                     # http://localhost:5173
+npm run dev                     # opens http://localhost:5173
 ```
+
+Open <http://localhost:5173> and log in:
 
 **Demo login:** `admin@supplylens.io` / `demo1234`
 
@@ -63,8 +71,42 @@ AZURE_OPENAI_API_VERSION=preview
 ```
 Without a key, the AI features degrade gracefully to deterministic summaries.
 
+## Use your own data
+
+SupplyLens comes preloaded with realistic sample data. To load **your** suppliers,
+inventory, and parts, there are three ways — full details in the
+**[Using Your Own Data guide](docs/data-guide.md)**:
+
+1. **Import a file (no code)** — go to **Inventory → Parts → Import** and upload a
+   CSV or XLSX of your parts master. The 52-week simulation recalculates instantly.
+2. **Edit the seed scripts** — change the `SUPPLIERS` / `SKUS` lists in
+   [backend/data/seed_risk.py](backend/data/seed_risk.py) (and the login in
+   [backend/data/seed_users.py](backend/data/seed_users.py)), then re-run them.
+3. **Load CSVs into Azure SQL** — drop your CSVs in `backend/data/` and run
+   `python data/import_data.py` for production.
+
+The parts import expects these columns (only `part_number` is required):
+`part_number, description, vendor, vendor_name, lead_time_weeks, abc_group, on_hand,
+on_order, forecast, last_year_usage, unit_price, product_per_case, cases_per_pallet,
+eoq, safety_stock`.
+
+## Documentation
+
+Full docs live in [`docs/`](docs/README.md):
+
+| Guide | What it covers |
+|---|---|
+| [Getting Started](docs/getting-started.md) | Install & run locally in ~5 minutes |
+| [Features & Purpose](docs/features.md) | What each screen does and why |
+| [Using Your Own Data](docs/data-guide.md) | Load your own suppliers, inventory, parts |
+| [Architecture](docs/architecture.md) | How it fits together + AI grounding |
+| [API Reference](docs/api-reference.md) | Every HTTP endpoint |
+| [Configuration](docs/configuration.md) | Every environment variable |
+| [Deployment](docs/deployment.md) | Docker & Azure production setup |
+
 ## Production (Azure)
-Set `DB_BACKEND=azure` and provide Azure SQL credentials in `.env`, then run `backend/schema.sql` against the database and `python data/import_data.py` to load CSVs. Install `pyodbc` (needs ODBC Driver 18) and `openai`. Lock CORS via `ALLOWED_ORIGINS` and set a strong `JWT_SECRET`.
+Set `DB_BACKEND=azure` and provide Azure SQL credentials in `.env`, then run `backend/schema.sql` against the database and `python data/import_data.py` to load CSVs. Install `pyodbc` (needs ODBC Driver 18) and `openai`. Lock CORS via `ALLOWED_ORIGINS` and set a strong `JWT_SECRET`. See the [Deployment guide](docs/deployment.md) for Docker Compose.
+
 
 ## Configuration (`backend/.env`)
 | Var | Purpose |
