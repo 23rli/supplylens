@@ -1,5 +1,5 @@
-"""Seed a SQLite medical-device risk dataset + decision tables for local dev.
-Run: python seed_risk.py  (creates tables, suppliers, inventory, view-equivalent rows)."""
+﻿"""Seed a SQLite commodity & manufacturing risk dataset + decision tables for local dev.
+Run: python data/seed_risk.py"""
 import random, sqlite3
 from pathlib import Path
 
@@ -7,17 +7,17 @@ random.seed(42)
 DB = Path(__file__).parent.parent / "supplylens.db"
 SITES = ["BOSTON", "CHICAGO", "SEATTLE"]
 SUPPLIERS = [
-    ("SUP001","MediCore USA","United States","Surgical","Primary",5,0.94,0.97),
-    ("SUP002","Pacific Medtech","Taiwan","Diagnostic","Primary",12,0.87,0.91),
-    ("SUP006","Apex BioSupply","United States","Critical Care","Primary",6,0.89,0.94),
-    ("SUP007","GlobalMed Dist","Singapore","Diagnostic","Backup",18,0.82,0.88),
+    ("SUP001","Midwest Steel Co","United States","Raw Materials","Primary",5,0.94,0.97),
+    ("SUP002","Pacific Components","Taiwan","Electronics","Primary",12,0.87,0.91),
+    ("SUP006","Apex Fasteners","United States","Hardware","Primary",6,0.89,0.94),
+    ("SUP007","Global Polymers","Singapore","Raw Materials","Backup",18,0.82,0.88),
 ]
 SKUS = [
-    ("SKU001","Surgical Gloves (M)","Critical",62,7,"SUP001",8.50),
-    ("SKU004","IV Catheters 18G","Critical",28,10,"SUP006",12.75),
-    ("SKU021","Pulse Oximeters","Standard",8,14,"SUP002",45.00),
-    ("SKU028","Isolation Gowns","Standard",50,7,"SUP007",5.50),
-    ("SKU015","Alcohol Wipes","Consumable",200,3,"SUP001",0.15),
+    ("SKU001","Steel Bracket A36","Critical",62,7,"SUP001",8.50),
+    ("SKU004","Aluminum Housing 6061","Critical",28,10,"SUP006",12.75),
+    ("SKU021","PCB Controller Board","Standard",8,14,"SUP002",45.00),
+    ("SKU028","Hydraulic Seal Kit","Standard",50,7,"SUP007",5.50),
+    ("SKU015","M8 Hex Bolts (box)","Consumable",200,3,"SUP001",0.15),
 ]
 
 c = sqlite3.connect(DB)
@@ -53,4 +53,4 @@ for sid,name,cat,dem,lead,sup,cost in SKUS:
         c.execute("INSERT INTO sku_risk_summary VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)",
                   (sid,name,site,cat,stock,dem,lead,sup,cost,dos,buf,lvl,"see decision panel"))
 c.commit(); c.close()
-print("Seeded risk + decision tables")
+print("Seeded commodity & manufacturing risk + decision tables")

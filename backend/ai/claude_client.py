@@ -1,34 +1,12 @@
+﻿"""
+Wrapper kept for backwards compatibility with routers/chat.py.
+Delegates to ai.llm (Foundry v1 endpoint). Raises on failure so the caller
+returns a graceful error.
 """
-Wrapper for Azure OpenAI chat completions.
-"""
-from dotenv import load_dotenv
-import os
+from ai.llm import chat
 
-load_dotenv()
 
 def call_claude(system_prompt: str, messages: list[dict]) -> str:
-    """
-    Calls Azure OpenAI. Name kept for backwards compatibility with routers.
-
-    Args:
-        system_prompt: The grounded system prompt with live data
-        messages: List of {"role": "user"|"assistant", "content": "..."} dicts
-                  representing the conversation history
-
-    Returns:
-        The assistant's response as a string.
-    """
-    from openai import AzureOpenAI
-    client = AzureOpenAI(
-        azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
-        api_key=os.getenv("AZURE_OPENAI_API_KEY"),
-        api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2024-06-01"),
-    )
-
-    response = client.chat.completions.create(
-        model=os.getenv("AZURE_OPENAI_DEPLOYMENT", "gpt-4o"),
-        max_tokens=1024,
-        messages=[{"role": "system", "content": system_prompt}] + messages,
-    )
-
-    return response.choices[0].message.content
+    """Calls the configured model with a system prompt + conversation history."""
+    full = [{"role": "system", "content": system_prompt}] + messages
+    return chat(full, max_tokens=1500)

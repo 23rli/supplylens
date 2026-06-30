@@ -1,6 +1,6 @@
 """
 Builds the system prompt for Claude API calls.
-This is the most important file — it determines quality of AI responses.
+This is the most important file â€” it determines quality of AI responses.
 """
 from datetime import date
 
@@ -56,7 +56,7 @@ def format_supplier_data(supplier_rows: list[dict]) -> str:
     lines = []
     for s in supplier_rows:
         reliability_pct = round(s["on_time_delivery_rate"] * 100, 1)
-        incident_note = f" | ⚠️ {s['incident_count_12m']} incidents in last 12 months" if s["incident_count_12m"] > 0 else ""
+        incident_note = f" | âš ï¸ {s['incident_count_12m']} incidents in last 12 months" if s["incident_count_12m"] > 0 else ""
         lines.append(
             f"  {s['supplier_name']} ({s['supplier_id']}) | "
             f"Tier: {s['contract_tier']} | "
@@ -75,8 +75,8 @@ def format_incidents(incident_rows: list[dict]) -> str:
     for i in incident_rows:
         delay_note = f" ({i['days_delayed']} days delayed)" if i["days_delayed"] > 0 else ""
         lines.append(
-            f"  [{i['incident_date']}] {i['supplier_name']}: {i['incident_type']}{delay_note} — "
-            f"Severity: {i['severity']} — Affected SKUs: {i['affected_skus']}"
+            f"  [{i['incident_date']}] {i['supplier_name']}: {i['incident_type']}{delay_note} â€” "
+            f"Severity: {i['severity']} â€” Affected SKUs: {i['affected_skus']}"
         )
     return "\n".join(lines)
 
@@ -89,7 +89,7 @@ def build_system_prompt(context: dict) -> str:
     today = date.today().strftime("%B %d, %Y")
     stats = context["stats"]
 
-    return f"""You are SupplyLens AI, an intelligent supply chain risk analyst for a medical device distribution company operating across three sites: Boston, Chicago, and Seattle.
+    return f"""You are SupplyLens AI, an intelligent supply chain risk analyst for a commodity & manufacturing operation operating across three plants: Boston, Chicago, and Seattle.
 
 TODAY'S DATE: {today}
 
@@ -101,55 +101,55 @@ YOUR ROLE:
 
 CRITICAL RULE: You must ONLY answer based on the data provided below. Do not invent numbers, SKUs, suppliers, or incidents that are not in this data. If you cannot answer from the data, say so and explain what additional data would help.
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 CURRENT INVENTORY RISK DATA (as of {today})
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 {format_risk_data(context["risk_summary"])}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 SUPPLIER HEALTH DATA
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 {format_supplier_data(context["suppliers"])}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 RECENT SUPPLIER INCIDENTS (last 10)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 {format_incidents(context["recent_incidents"])}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 HEADLINE STATS
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 - Critical risk SKU-site pairs: {stats.get("critical_skus", "n/a")}
 - High risk SKU-site pairs: {stats.get("high_risk_skus", "n/a")}
 - Average days of supply across all SKUs: {stats.get("avg_days_of_supply", "n/a")} days
 - Overall supplier reliability: {stats.get("supplier_reliability_pct", "n/a")}%
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 INVENTORY ENGINE (52-week simulation)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 - Total parts: {context.get("inventory", {}).get("total_parts", "n/a")}
 - Parts at risk of understock: {context.get("inventory", {}).get("understock_parts", "n/a")}
 - Parts at risk of overstock: {context.get("inventory", {}).get("overstock_parts", "n/a")}
 - Annual spend: ${context.get("inventory", {}).get("total_annual_spend", "n/a")}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 HEDGING PLANNER (current scenario)
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 - Amount Saved (hedged vs spot-only): ${context.get("hedging", {}).get("amount_saved", "n/a")}
 - Saved per ton: ${context.get("hedging", {}).get("saved_per_ton", "n/a")}
 - Coverage on plan: {context.get("hedging", {}).get("all_coverage_ok", "n/a")}
 
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 RESPONSE GUIDELINES
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”â”
 When recommending actions, always rank them and explain the tradeoff:
-  • EXPEDITE — Fastest resolution; higher cost; use for Critical category items only
-  • REBALANCE — Transfer stock between sites; no cost; takes 1-2 days; good for non-critical
-  • SUBSTITUTE — Use alternate SKU; may affect clinical workflow; confirm with operations
-  • STANDARD ORDER — Appropriate when buffer_days > 0 but monitoring needed
-  • DEFER — Accept temporary shortage; only appropriate for Consumable/Standard category
+  â€¢ EXPEDITE â€” Fastest resolution; higher cost; use for Critical category items only
+  â€¢ REBALANCE â€” Transfer stock between sites; no cost; takes 1-2 days; good for non-critical
+  â€¢ SUBSTITUTE â€” Use alternate SKU; may affect clinical workflow; confirm with operations
+  â€¢ STANDARD ORDER â€” Appropriate when buffer_days > 0 but monitoring needed
+  â€¢ DEFER â€” Accept temporary shortage; only appropriate for Consumable/Standard category
 
 Keep responses concise and decisive. Supply chain managers need clear direction, not lengthy explanations. Use bullet points for action lists. Lead with the most critical finding.
 
-End responses involving risk with a one-line confidence note, e.g.: "Confidence: High — based on current stock levels and 12-month supplier history."
+End responses involving risk with a one-line confidence note, e.g.: "Confidence: High â€” based on current stock levels and 12-month supplier history."
 """
