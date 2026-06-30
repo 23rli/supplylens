@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchWorstOffenders } from "../api/client";
 import LoadingSpinner from "../components/LoadingSpinner";
+import { PageHeader } from "../components/ui";
 import { useNavigate } from "react-router-dom";
 
 export default function WorstOffenders() {
@@ -17,35 +18,33 @@ export default function WorstOffenders() {
   const col = kind === "under" ? "weeks_understocked" : "weeks_overstocked";
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-100">Worst Offenders</h1>
-          <p className="text-slate-400 text-sm mt-1">Parts most exposed to {kind}stock — your action list</p>
-        </div>
-        <div className="flex gap-1 bg-slate-800 rounded-lg p-1">
-          {["under", "over"].map((k) => (
-            <button key={k} onClick={() => setKind(k)}
-              className={`px-4 py-2 rounded-md text-sm font-medium ${kind === k ? "bg-blue-600 text-white" : "text-slate-400"}`}>
-              {k === "under" ? "Understock" : "Overstock"}
-            </button>
-          ))}
-        </div>
-      </div>
+      <PageHeader title="Worst Offenders" subtitle={`Parts most exposed to ${kind}stock — your action list`}
+        actions={
+          <div className="flex gap-1 bg-surface-sunken border border-surface-border rounded-lg p-1">
+            {["under", "over"].map((k) => (
+              <button key={k} onClick={() => setKind(k)}
+                className={`px-3.5 py-1.5 rounded-md text-sm font-medium transition-colors ${kind === k ? "bg-white text-ink shadow-card" : "text-ink-muted hover:text-ink"}`}>
+                {k === "under" ? "Understock" : "Overstock"}
+              </button>
+            ))}
+          </div>
+        } />
       {loading ? <LoadingSpinner /> : (
-        <div className="bg-slate-800 border border-slate-700 rounded-xl overflow-hidden">
+        <div className="card overflow-hidden">
           <table className="w-full">
-            <thead><tr className="border-b border-slate-700">
-              {["Part", "Vendor", "Weeks", "Pallet Gap", "Annual Spend"].map((h) =>
-                <th key={h} className="px-6 py-3 text-left text-xs font-medium text-slate-400 uppercase">{h}</th>)}
-            </tr></thead>
-            <tbody className="divide-y divide-slate-700/50">
+            <thead className="bg-surface-sunken">
+              <tr className="border-b border-surface-border">
+                {["Part", "Vendor", "Weeks", "Pallet Gap", "Annual Spend"].map((h) => <th key={h} className="th">{h}</th>)}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-surface-border">
               {rows.map((p) => (
-                <tr key={p.part_number} onClick={() => nav(`/inventory/parts/${p.part_number}`)} className="hover:bg-slate-700/30 cursor-pointer">
-                  <td className="px-6 py-3"><div className="text-sm text-slate-100">{p.part_number}</div><div className="text-xs text-slate-500">{p.description}</div></td>
-                  <td className="px-6 py-3 text-sm text-slate-400">{p.vendor_name}</td>
-                  <td className={`px-6 py-3 font-mono font-semibold ${kind === "under" ? "text-red-400" : "text-yellow-400"}`}>{p[col]}</td>
-                  <td className="px-6 py-3 font-mono text-slate-300">{kind === "under" ? p.max_pallets_under : p.max_pallets_over}</td>
-                  <td className="px-6 py-3 font-mono text-slate-300">${p.annual_spend.toLocaleString()}</td>
+                <tr key={p.part_number} onClick={() => nav(`/inventory/parts/${p.part_number}`)} className="hover:bg-surface-sunken/60 cursor-pointer">
+                  <td className="td"><div className="font-medium text-ink">{p.part_number}</div><div className="text-xs text-ink-muted">{p.description}</div></td>
+                  <td className="td">{p.vendor_name}</td>
+                  <td className={`td font-mono font-semibold ${kind === "under" ? "text-[#b42318]" : "text-[#b54708]"}`}>{p[col]}</td>
+                  <td className="td font-mono">{kind === "under" ? p.max_pallets_under : p.max_pallets_over}</td>
+                  <td className="td font-mono">${p.annual_spend.toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>

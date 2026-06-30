@@ -1,27 +1,49 @@
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap");
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+html, body, #root { height: 100%; }
 body {
-  background-color: #0F172A;
-  color: #F1F5F9;
-  min-height: 100vh;
+  background-color: #f6f8fb;
+  color: #1a2332;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Custom scrollbar for chat panel */
-.chat-scroll::-webkit-scrollbar {
-  width: 4px;
-}
-.chat-scroll::-webkit-scrollbar-track {
-  background: #1E293B;
-}
-.chat-scroll::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 2px;
+@layer components {
+  .card { @apply bg-white border border-surface-border rounded-xl shadow-card; }
+  .page-title { @apply text-xl font-semibold text-ink tracking-tight; }
+  .page-sub { @apply text-sm text-ink-soft mt-0.5; }
+  .section-title { @apply text-sm font-semibold text-ink; }
+  .label { @apply text-xs font-medium text-ink-muted uppercase tracking-wide; }
+  .stat { @apply text-2xl font-semibold text-ink tabular-nums tracking-tight; }
+  .btn { @apply inline-flex items-center justify-center gap-1.5 rounded-lg text-sm font-medium px-3.5 py-2 transition-colors; }
+  .btn-primary { @apply btn bg-brand-600 text-white hover:bg-brand-700; }
+  .btn-ghost { @apply btn text-ink-soft hover:bg-surface-sunken hover:text-ink; }
+  .btn-outline { @apply btn border border-surface-border text-ink-soft hover:bg-surface-sunken; }
+  .input { @apply bg-white border border-surface-border text-ink text-sm rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-500; }
+  .th { @apply px-5 py-3 text-left text-xs font-semibold text-ink-muted uppercase tracking-wide; }
+  .td { @apply px-5 py-3.5 text-sm text-ink-soft; }
 }
 
-/* Prose styling for AI responses */
+/* Risk chips — muted, professional */
+.chip { display:inline-flex; align-items:center; gap:.375rem; padding:.125rem .5rem; border-radius:9999px;
+  font-size:.6875rem; font-weight:600; border:1px solid; white-space:nowrap; }
+.chip-dot { width:.4rem; height:.4rem; border-radius:9999px; }
+.chip-critical { color:#b42318; background:#fef3f2; border-color:#fecdca; }
+.chip-critical .chip-dot { background:#d92d20; }
+.chip-high { color:#b54708; background:#fffaeb; border-color:#fedf89; }
+.chip-high .chip-dot { background:#dc6803; }
+.chip-medium { color:#854a0e; background:#fffbeb; border-color:#fde68a; }
+.chip-medium .chip-dot { background:#ca8a04; }
+.chip-low { color:#067647; background:#ecfdf3; border-color:#abefc6; }
+.chip-low .chip-dot { background:#16a34a; }
+
+.chat-scroll::-webkit-scrollbar { width: 6px; }
+.chat-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+
 .ai-response p { margin-bottom: 0.5rem; }
 .ai-response ul { list-style: disc; padding-left: 1.25rem; margin-bottom: 0.5rem; }
 .ai-response li { margin-bottom: 0.25rem; }
-.ai-response strong { color: #F1F5F9; font-weight: 600; }
+.ai-response strong { color: #1a2332; font-weight: 600; }
