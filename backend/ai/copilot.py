@@ -1,9 +1,10 @@
-﻿"""
+"""
 AI copilot: structured, inline AI helpers grounded on live decision data.
 Uses the LLM (Azure Foundry gpt-5-mini) when configured; deterministic fallback
 otherwise so the app always works.
 """
 from decision.store import explain, today
+from db import fetch_all
 from ai.llm import chat, is_configured, LLMError
 
 SYS = ("You are SupplyLens AI, a supply-chain risk analyst for a commodity and "
@@ -51,3 +52,25 @@ def explain_decision(sku: str, site: str) -> dict:
     e["confidence"] = "High - based on live stock and supplier history"
     e["ai"] = is_configured()
     return e
+
+
+def ask(question: str) -> dict:
+    """Natural-language Q&A grounded on the full live risk picture."""
+    rows = fetch_all("SELECT sku_id, sku_name, site_id, category, risk_level, buffer_days, "
+                     "days_of_supply, current_stock, primary_supplier_id FROM sku_risk_summary "
+                     "ORDER BY buffer_days ASC")
+    sups = fetch_all("SELECT supplier_id, supplier_name, contract_tier, on_time_delivery_rate, "
+                     "avg_lead_time_days, incident_count_12m FROM suppliers")
+    context = "RISK ROWS:\n" + "\n".join(
+        f"  {r['sku_name']} @ {r['site_id']}: {r['risk_level']}, buffer {r['buffer_days']}d, "
+        f"DoS {r['days_of_supply']}d, stock {r['current_stock']}, supplier {r['primary_supplier_id']}"
+        for r in rows[:40])
+    context += "\n\nSUPPLIERS:\n" + "\n".join(
+        f"  {s['supplier_name']} ({s['supplier_id']}): tier {s['contract_tier']}, "
+        f"on-time {round((s['on_time_delivery_rate'] or 0)*100)}%, lead {s['avg_lead_time_days']}d, "
+        f"{s['incident_count_12m']} incidents/12mo" for s in sups)
+    prompt = (f"Answer the manager's question using ONLY this live data. Be concise, cite specific "
+              f"SKUs/sites/suppliers, and end with a recommended next step.\n\n{context}\n\nQUESTION: {question}")
+    fallback = ("AI is offline. Based on the data, focus on the most negative-buffer CRITICAL items first "
+                "and check whether their primary supplier is reliable.")
+    return {"answer": _llm_or_none(prompt) or fallback, "ai": is_configured()}

@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Query, HTTPException
-from ai.copilot import briefing, explain_decision
+﻿from fastapi import APIRouter, Query, HTTPException
+from pydantic import BaseModel
+from ai.copilot import briefing, explain_decision, ask
 
 router = APIRouter()
 
@@ -13,3 +14,10 @@ def ai_explain(sku: str = Query(...), site: str = Query(...)):
     if not r:
         raise HTTPException(404, "SKU/site not found")
     return r
+
+class AskReq(BaseModel):
+    question: str
+
+@router.post("/ai/ask")
+def ai_ask(req: AskReq):
+    return ask(req.question)

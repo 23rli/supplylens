@@ -162,3 +162,12 @@ export async function fetchActions() {
   if (!res.ok) throw new Error("Failed to fetch actions");
   return res.json();
 }
+
+export async function askAI(question) {
+  const res = await fetch(`${BASE_URL}/ai/ask`, {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ question }),
+  });
+  if (!res.ok) throw new Error("Ask failed");
+  return res.json();
+}
