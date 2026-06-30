@@ -1,29 +1,39 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { explainDecision, executeAction } from "../api/client";
-import LoadingSpinner from "../components/LoadingSpinner";
-import { PageHeader, Card, RiskChip } from "../components/ui";
+import { PageHeader, Card, RiskChip, Skeleton, StatsRowSkeleton } from "../components/ui";
+import { useToast } from "../components/Toast";
 
 export default function DecisionView() {
   const { sku, site } = useParams();
   const [d, setD] = useState(null);
-  const [msg, setMsg] = useState("");
+  const [running, setRunning] = useState(null);
   const nav = useNavigate();
+  const toast = useToast();
   useEffect(() => { explainDecision(sku, site).then(setD); }, [sku, site]);
-  if (!d) return <LoadingSpinner message="Analyzing decision options..." />;
 
   const run = async (a) => {
-    setMsg("Executing...");
+    setRunning(a.type);
     try {
       const r = await executeAction(a.type, { sku, site, label: a.label, cost: a.cost, benefit: a.benefit });
-      setMsg(`${a.type} started — ETA ${r.eta_days}d (action #${r.action_id})`);
-    } catch { setMsg("Execution failed"); }
+      toast(`${a.type} started for ${sku} - ETA ${r.eta_days}d (action #${r.action_id})`, "success");
+    } catch { toast("Execution failed. Please try again.", "error"); }
+    finally { setRunning(null); }
   };
+
+  if (!d) return (
+    <div className="space-y-6">
+      <PageHeader title={`${sku} \u00b7 ${site}`} subtitle="Analyzing decision options..." />
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {[0, 1, 2].map((i) => <div key={i} className="card p-5 space-y-3"><Skeleton className="h-4 w-24" /><Skeleton className="h-4 w-full" /><Skeleton className="h-4 w-2/3" /></div>)}
+      </div>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
-      <PageHeader title={`${sku} · ${site}`} subtitle={d.narrative}
-        actions={<button onClick={() => nav("/today")} className="btn-outline">← Back to Today</button>} />
+      <PageHeader title={`${sku} \u00b7 ${site}`} subtitle={d.narrative}
+        actions={<button onClick={() => nav("/today")} className="btn-outline">&larr; Back to Today</button>} />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         <Card title="Context">
@@ -46,7 +56,7 @@ export default function DecisionView() {
           {d.confidence && <p className="text-xs text-[#067647] mt-4 pt-3 border-t border-surface-border">{d.confidence}</p>}
         </Card>
 
-        <Card title="Recommended Actions" className="lg:row-span-1">
+        <Card title="Recommended Actions">
           <div className="space-y-2.5">
             {d.actions.map((a) => (
               <div key={a.type} className={`p-3 rounded-lg border ${a.recommended ? "border-brand-600 bg-brand-50" : "border-surface-border"}`}>
@@ -54,12 +64,13 @@ export default function DecisionView() {
                   <span className="text-sm font-medium text-ink">{a.label}</span>
                   {a.recommended && <span className="text-[10px] font-semibold text-brand-700 bg-white border border-brand-600 rounded px-1.5 py-0.5">BEST</span>}
                 </div>
-                <div className="text-xs text-ink-muted mt-1">cost ${a.cost.toLocaleString()} · benefit ${a.benefit.toLocaleString()} · {Math.round(a.confidence * 100)}% confidence</div>
-                <button onClick={() => run(a)} className="btn-primary mt-2.5 text-xs px-3 py-1.5">Execute</button>
+                <div className="text-xs text-ink-muted mt-1">cost ${a.cost.toLocaleString()} &middot; benefit ${a.benefit.toLocaleString()} &middot; {Math.round(a.confidence * 100)}% confidence</div>
+                <button onClick={() => run(a)} disabled={running} className="btn-primary mt-2.5 text-xs px-3 py-1.5 disabled:opacity-50">
+                  {running === a.type ? "Executing..." : "Execute"}
+                </button>
               </div>
             ))}
           </div>
-          {msg && <p className="text-xs text-[#067647] mt-3">{msg}</p>}
         </Card>
       </div>
     </div>

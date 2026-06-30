@@ -47,3 +47,19 @@ body {
 .ai-response ul { list-style: disc; padding-left: 1.25rem; margin-bottom: 0.5rem; }
 .ai-response li { margin-bottom: 0.25rem; }
 .ai-response strong { color: #1a2332; font-weight: 600; }
+
+/* Skeleton shimmer */
+.skeleton { background: linear-gradient(90deg, #eef1f6 25%, #e2e8f0 37%, #eef1f6 63%);
+  background-size: 400% 100%; animation: shimmer 1.4s ease infinite; border-radius: 8px; }
+@keyframes shimmer { 0% { background-position: 100% 0; } 100% { background-position: 0 0; } }
+
+/* Toasts */
+.toast-wrap { position: fixed; top: 1rem; right: 1rem; z-index: 50; display: flex; flex-direction: column; gap: .5rem; }
+.toast { display: flex; align-items: flex-start; gap: .625rem; background: #fff; border: 1px solid #e5e9f0;
+  box-shadow: 0 8px 24px -6px rgba(16,24,40,.16); border-radius: 12px; padding: .75rem 1rem; min-width: 280px;
+  max-width: 380px; animation: toastin .22s ease; }
+@keyframes toastin { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: none; } }
+
+/* Subtle fade-in for content */
+.fade-in { animation: fadein .25s ease; }
+@keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
