@@ -23,7 +23,7 @@ export default function SKUTable() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="SKU Risk" subtitle={`${risks.length} SKU-site combinations Â· sorted by risk`} />
+      <PageHeader title="SKU Risk" subtitle={`${risks.length} SKU-site combinations · sorted by risk`} />
       <div className="flex flex-wrap items-center gap-3">
         <select className="input" value={filters.site} onChange={(e) => set("site", e.target.value)}>
           {SITES.map((s) => <option key={s} value={s}>{s || "All Sites"}</option>)}

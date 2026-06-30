@@ -18,7 +18,7 @@ export default function WorstOffenders() {
   const col = kind === "under" ? "weeks_understocked" : "weeks_overstocked";
   return (
     <div className="space-y-6">
-      <PageHeader title="Worst Offenders" subtitle={`Parts most exposed to ${kind}stock â€” your action list`}
+      <PageHeader title="Worst Offenders" subtitle={`Parts most exposed to ${kind}stock — your action list`}
         actions={
           <div className="flex gap-1 bg-surface-sunken border border-surface-border rounded-lg p-1">
             {["under", "over"].map((k) => (

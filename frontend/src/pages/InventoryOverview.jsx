@@ -29,7 +29,7 @@ export default function InventoryOverview() {
         <Stat label="Overstock Risk" value={stats.overstock_parts} tone="warn" />
         <Stat label="Annual Spend" value={`$${(stats.total_annual_spend / 1e6).toFixed(1)}M`} tone="good" />
       </div>
-      <Card title="Warehouse Pallet Load â€” Next 52 Weeks">
+      <Card title="Warehouse Pallet Load — Next 52 Weeks">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={load}>
             <CartesianGrid stroke="#e5e9f0" strokeDasharray="3 3" />
