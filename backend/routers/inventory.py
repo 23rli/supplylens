@@ -3,6 +3,8 @@ from typing import Optional
 from inventory.store import (parts_with_metrics, part_detail, worst_offenders,
                              warehouse_load, inventory_stats)
 from inventory.importer import parse_csv, parse_xlsx, import_parts
+from inventory.demand_forecast import forecast_demand
+from inventory.store import get_part
 
 router = APIRouter()
 
@@ -39,3 +41,11 @@ async def import_file(file: UploadFile = File(...)):
     except Exception as e:
         raise HTTPException(400, f"Import failed: {e}")
     return {"imported": n}
+
+
+@router.get("/inventory/part/{part_number}/demand")
+def demand(part_number: str):
+    p = get_part(part_number)
+    if not p:
+        raise HTTPException(404, "Part not found")
+    return forecast_demand(p)

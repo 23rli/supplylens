@@ -171,3 +171,9 @@ export async function askAI(question) {
   if (!res.ok) throw new Error("Ask failed");
   return res.json();
 }
+
+export async function fetchPartDemand(partNumber) {
+  const res = await fetch(`${BASE_URL}/inventory/part/${partNumber}/demand`);
+  if (!res.ok) throw new Error("Failed to fetch demand forecast");
+  return res.json();
+}
