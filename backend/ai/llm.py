@@ -2,6 +2,10 @@
 LLM client for the AI copilot. Targets the Azure AI Foundry v1 chat-completions
 endpoint, which is what gpt-5 deployments use. Pure stdlib HTTP. Falls back
 gracefully when not configured or unreachable.
+
+Performance: gpt-5 reasoning models default to heavy hidden reasoning (slow). For
+the short, factual tasks here we set reasoning_effort=minimal, which cuts latency
+~2-3x and avoids wasted reasoning tokens.
 """
 import json
 import os
@@ -11,9 +15,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# gpt-5 reasoning models spend tokens on hidden reasoning before output, so the
-# cap must be generous or the visible answer comes back empty.
-DEFAULT_MAX_TOKENS = 3000
+DEFAULT_MAX_TOKENS = 1200
+DEFAULT_REASONING = os.getenv("AZURE_OPENAI_REASONING_EFFORT", "minimal")
+TIMEOUT = int(os.getenv("AZURE_OPENAI_TIMEOUT", "45"))
 
 
 def is_configured() -> bool:
@@ -32,7 +36,8 @@ class LLMError(RuntimeError):
     pass
 
 
-def chat(messages: list[dict], max_tokens: int = DEFAULT_MAX_TOKENS, temperature: float | None = None) -> str:
+def chat(messages: list[dict], max_tokens: int = DEFAULT_MAX_TOKENS,
+         temperature: float | None = None, reasoning_effort: str | None = DEFAULT_REASONING) -> str:
     if not is_configured():
         raise LLMError("Azure OpenAI not configured")
     payload = {
@@ -40,6 +45,8 @@ def chat(messages: list[dict], max_tokens: int = DEFAULT_MAX_TOKENS, temperature
         "messages": messages,
         "max_completion_tokens": max_tokens,
     }
+    if reasoning_effort:
+        payload["reasoning_effort"] = reasoning_effort
     if temperature is not None:
         payload["temperature"] = temperature
     req = urllib.request.Request(
@@ -47,10 +54,10 @@ def chat(messages: list[dict], max_tokens: int = DEFAULT_MAX_TOKENS, temperature
         headers={"api-key": os.getenv("AZURE_OPENAI_API_KEY"), "Content-Type": "application/json"},
     )
     try:
-        r = json.load(urllib.request.urlopen(req, timeout=90))
+        r = json.load(urllib.request.urlopen(req, timeout=TIMEOUT))
         content = (r["choices"][0]["message"]["content"] or "").strip()
         if not content:
-            raise LLMError("empty completion (raise max tokens)")
+            raise LLMError("empty completion")
         return content
     except urllib.error.HTTPError as e:
         raise LLMError(f"HTTP {e.code}: {e.read().decode()[:200]}")
