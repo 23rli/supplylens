@@ -2,7 +2,7 @@
 Risk/supplier query layer. Uses the shared db backend (SQLite local / Azure prod).
 All SQL queries live here — never in the routers.
 """
-from db import fetch_all, fetch_one
+from db import fetch_all, fetch_one, BACKEND, months_ago_sql
 
 # CASE expression used to order rows CRITICAL -> LOW (replaces MySQL FIELD()).
 _RISK_ORDER = """
@@ -32,7 +32,10 @@ def get_risk_summary(site: str = None, risk_level: str = None, category: str = N
 
 def get_top_risks(limit: int = 10) -> list[dict]:
     """Returns the top N highest-risk SKUs across all sites."""
-    query = f"SELECT TOP (?) * FROM sku_risk_summary ORDER BY {_RISK_ORDER}"
+    if BACKEND == "azure":
+        query = f"SELECT TOP (?) * FROM sku_risk_summary ORDER BY {_RISK_ORDER}"
+    else:
+        query = f"SELECT * FROM sku_risk_summary ORDER BY {_RISK_ORDER} LIMIT ?"
     return fetch_all(query, (limit,))
 
 def get_risk_counts_by_site() -> list[dict]:
@@ -80,7 +83,7 @@ def get_suppliers() -> list[dict]:
         FROM suppliers s
         LEFT JOIN supplier_incidents si
           ON s.supplier_id = si.supplier_id
-          AND si.incident_date >= DATEADD(MONTH, -12, CAST(GETDATE() AS DATE))
+          AND si.incident_date >= """ + months_ago_sql(12) + """
         WHERE s.active = 1
         GROUP BY s.supplier_id, s.supplier_name, s.country, s.category, s.contract_tier,
                  s.avg_lead_time_days, s.on_time_delivery_rate, s.quality_score, s.active
@@ -109,11 +112,13 @@ def get_ai_context() -> dict:
     try:
         risk_data = get_risk_summary()
         supplier_data = get_suppliers()
-        incidents = fetch_all("""
-            SELECT TOP (10) si.*, s.supplier_name
+        top = "TOP (10)" if BACKEND == "azure" else ""
+        limit = "" if BACKEND == "azure" else "LIMIT 10"
+        incidents = fetch_all(f"""
+            SELECT {top} si.*, s.supplier_name
             FROM supplier_incidents si
             JOIN suppliers s ON si.supplier_id = s.supplier_id
-            ORDER BY si.incident_date DESC
+            ORDER BY si.incident_date DESC {limit}
         """)
         stats = get_dashboard_stats()
     except Exception:

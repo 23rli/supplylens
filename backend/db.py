@@ -14,6 +14,12 @@ BACKEND = os.getenv("DB_BACKEND", "sqlite").lower()
 SQLITE_PATH = os.getenv("SQLITE_PATH", str(Path(__file__).parent / "supplylens.db"))
 
 
+def months_ago_sql(n: int) -> str:
+    """Dialect-aware 'date N months before today' expression."""
+    return f"DATEADD(MONTH, -{n}, CAST(GETDATE() AS DATE))" if BACKEND == "azure" \
+        else f"date('now','-{n} months')"
+
+
 def get_connection():
     if BACKEND == "azure":
         import pyodbc

@@ -32,9 +32,18 @@ CREATE TABLE IF NOT EXISTS actions (id INTEGER PRIMARY KEY AUTOINCREMENT, sku_id
   action_type TEXT, label TEXT, cost REAL, benefit REAL, status TEXT DEFAULT 'pending', created_at TEXT);
 CREATE TABLE IF NOT EXISTS decision_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, sku_id TEXT, site_id TEXT,
   detail TEXT, created_at TEXT);
-DELETE FROM suppliers; DELETE FROM sku_risk_summary;
+CREATE TABLE IF NOT EXISTS supplier_incidents (id INTEGER PRIMARY KEY AUTOINCREMENT, supplier_id TEXT,
+  incident_date TEXT, incident_type TEXT, affected_skus TEXT, severity TEXT, resolution_notes TEXT,
+  days_delayed INT DEFAULT 0, resolved INT DEFAULT 1);
+DELETE FROM suppliers; DELETE FROM sku_risk_summary; DELETE FROM supplier_incidents;
 """)
 c.executemany("INSERT INTO suppliers(supplier_id,supplier_name,country,category,contract_tier,avg_lead_time_days,on_time_delivery_rate,quality_score) VALUES (?,?,?,?,?,?,?,?)", SUPPLIERS)
+INCIDENTS = [
+    ("SUP002","2026-04-10","Late Delivery","SKU021","High","Air-freighted replacement",6),
+    ("SUP007","2026-05-02","Shortage","SKU028","Critical","Sourced from backup",12),
+    ("SUP002","2026-05-20","Quality Issue","SKU021","Medium","Lot quarantined",0),
+]
+c.executemany("INSERT INTO supplier_incidents(supplier_id,incident_date,incident_type,affected_skus,severity,resolution_notes,days_delayed) VALUES (?,?,?,?,?,?,?)", INCIDENTS)
 for sid,name,cat,dem,lead,sup,cost in SKUS:
     for site in SITES:
         roll=random.random()

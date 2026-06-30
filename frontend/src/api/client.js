@@ -118,7 +118,7 @@ export async function fetchBriefing() {
 }
 
 export async function explainDecision(sku, site) {
-  const res = await fetch(`${BASE_URL}/explain-decision?sku=${sku}&site=${site}`);
+  const res = await fetch(`${BASE_URL}/ai/explain?sku=${sku}&site=${site}`);
   if (!res.ok) throw new Error("Failed to explain");
   return res.json();
 }
