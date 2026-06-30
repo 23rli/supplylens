@@ -16,7 +16,7 @@ export default function Hedging() {
     fetchHedgingScenario({ s1, s2 }).then(setData).finally(() => setLoading(false));
   }, [s1]);
 
-  useEffect(() => { fetchPriceForecast("OIL_1").then(setFc).catch(() => {}); }, []);
+  useEffect(() => { fetchPriceForecast("STEEL").then(setFc).catch(() => {}); }, []);
 
   if (loading && !data) return <LoadingSpinner message="Running procurement scenario..." />;
 
@@ -24,7 +24,7 @@ export default function Hedging() {
   return (
     <div className="space-y-6">
       <PageHeader title="Hedging Planner"
-        subtitle={`Hedged vs spot-only procurement · ${data.total_mt.toLocaleString()} MT · coverage ${data.all_coverage_ok ? "on plan" : "below minimum"}`} />
+        subtitle={`Commodity hedged vs spot-only procurement Â· ${data.total_mt.toLocaleString()} MT Â· coverage ${data.all_coverage_ok ? "on plan" : "below minimum"}`} />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Stat label="Amount Saved" value={`$${(data.amount_saved / 1e6).toFixed(2)}M`} tone="good" />
@@ -33,7 +33,7 @@ export default function Hedging() {
         <Stat label="Spot Only" value={`$${(data.spot_total / 1e6).toFixed(1)}M`} />
       </div>
 
-      <Card title="Strategy Split" action={<span className="text-sm text-ink-soft">S1 (front-loaded) {Math.round(s1 * 100)}% · S2 (systematic) {Math.round(s2 * 100)}%</span>}>
+      <Card title="Strategy Split" action={<span className="text-sm text-ink-soft">S1 (front-loaded) {Math.round(s1 * 100)}% Â· S2 (systematic) {Math.round(s2 * 100)}%</span>}>
         <input type="range" min="0" max="1" step="0.05" value={s1} onChange={(e) => setS1(+e.target.value)} className="w-full accent-brand-600" />
       </Card>
 
@@ -51,8 +51,8 @@ export default function Hedging() {
             </BarChart>
           </ResponsiveContainer>
         </Card>
-        <Card title="OIL_1 Price Forecast">
-          <p className="text-xs text-ink-muted mb-3 -mt-1">Monthly avg/min/max — Prophet when available, numpy fallback otherwise</p>
+        <Card title="STEEL Price Forecast">
+          <p className="text-xs text-ink-muted mb-3 -mt-1">Monthly avg/min/max â€” Prophet when available, numpy fallback otherwise</p>
           <ResponsiveContainer width="100%" height={224}>
             <LineChart data={fc}>
               <CartesianGrid stroke="#e5e9f0" strokeDasharray="3 3" />
