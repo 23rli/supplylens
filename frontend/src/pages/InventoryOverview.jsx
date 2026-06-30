@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchInventoryStats, fetchWarehouseLoad } from "../api/client";
-import LoadingSpinner from "../components/LoadingSpinner";
+import { StatsRowSkeleton, ChartSkeleton } from "../components/ui";
 import { PageHeader, Stat, Card } from "../components/ui";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from "recharts";
 
@@ -17,7 +17,7 @@ export default function InventoryOverview() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <LoadingSpinner message="Running 52-week simulation..." />;
+  if (loading) return <div className="space-y-6"><StatsRowSkeleton count={4} /><ChartSkeleton height={300} /></div>;
   if (error) return <div className="text-[#b42318] text-center py-16">Error: {error}</div>;
 
   return (
@@ -29,7 +29,7 @@ export default function InventoryOverview() {
         <Stat label="Overstock Risk" value={stats.overstock_parts} tone="warn" />
         <Stat label="Annual Spend" value={`$${(stats.total_annual_spend / 1e6).toFixed(1)}M`} tone="good" />
       </div>
-      <Card title="Warehouse Pallet Load — Next 52 Weeks">
+      <Card title="Warehouse Pallet Load â€” Next 52 Weeks">
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={load}>
             <CartesianGrid stroke="#e5e9f0" strokeDasharray="3 3" />

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { fetchRiskSummary } from "../api/client";
 import RiskTable from "../components/RiskTable";
-import LoadingSpinner from "../components/LoadingSpinner";
+import { TableSkeleton } from "../components/ui";
 import { PageHeader } from "../components/ui";
 
 const SITES = ["", "BOSTON", "CHICAGO", "SEATTLE"];
@@ -23,7 +23,7 @@ export default function SKUTable() {
 
   return (
     <div className="space-y-6">
-      <PageHeader title="SKU Risk" subtitle={`${risks.length} SKU-site combinations · sorted by risk`} />
+      <PageHeader title="SKU Risk" subtitle={`${risks.length} SKU-site combinations Â· sorted by risk`} />
       <div className="flex flex-wrap items-center gap-3">
         <select className="input" value={filters.site} onChange={(e) => set("site", e.target.value)}>
           {SITES.map((s) => <option key={s} value={s}>{s || "All Sites"}</option>)}
@@ -36,7 +36,7 @@ export default function SKUTable() {
         </select>
         {active && <button onClick={() => setFilters({ site: "", risk_level: "", category: "" })} className="text-sm text-brand-600 hover:text-brand-700 font-medium">Clear filters</button>}
       </div>
-      {loading ? <LoadingSpinner /> : <RiskTable risks={risks} title={`${risks.length} SKUs`} />}
+      {loading ? <TableSkeleton rows={8} cols={8} /> : <RiskTable risks={risks} title={`${risks.length} SKUs`} />}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { fetchHedgingScenario, fetchPriceForecast } from "../api/client";
-import LoadingSpinner from "../components/LoadingSpinner";
+import { StatsRowSkeleton, ChartSkeleton } from "../components/ui";
 import { PageHeader, Stat, Card } from "../components/ui";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend, LineChart, Line } from "recharts";
 
@@ -18,13 +18,13 @@ export default function Hedging() {
 
   useEffect(() => { fetchPriceForecast("STEEL").then(setFc).catch(() => {}); }, []);
 
-  if (loading && !data) return <LoadingSpinner message="Running procurement scenario..." />;
+  if (loading && !data) return <div className="space-y-6"><StatsRowSkeleton count={4} /><ChartSkeleton height={260} /></div>;
 
   const chart = data.oils.map((o) => ({ name: o.oil_id, Hedged: o.hedged_cost, "Spot Only": o.spot_only_cost }));
   return (
     <div className="space-y-6">
       <PageHeader title="Hedging Planner"
-        subtitle={`Commodity hedged vs spot-only procurement Â· ${data.total_mt.toLocaleString()} MT Â· coverage ${data.all_coverage_ok ? "on plan" : "below minimum"}`} />
+        subtitle={`Commodity hedged vs spot-only procurement Ã‚Â· ${data.total_mt.toLocaleString()} MT Ã‚Â· coverage ${data.all_coverage_ok ? "on plan" : "below minimum"}`} />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <Stat label="Amount Saved" value={`$${(data.amount_saved / 1e6).toFixed(2)}M`} tone="good" />
@@ -33,7 +33,7 @@ export default function Hedging() {
         <Stat label="Spot Only" value={`$${(data.spot_total / 1e6).toFixed(1)}M`} />
       </div>
 
-      <Card title="Strategy Split" action={<span className="text-sm text-ink-soft">S1 (front-loaded) {Math.round(s1 * 100)}% Â· S2 (systematic) {Math.round(s2 * 100)}%</span>}>
+      <Card title="Strategy Split" action={<span className="text-sm text-ink-soft">S1 (front-loaded) {Math.round(s1 * 100)}% Ã‚Â· S2 (systematic) {Math.round(s2 * 100)}%</span>}>
         <input type="range" min="0" max="1" step="0.05" value={s1} onChange={(e) => setS1(+e.target.value)} className="w-full accent-brand-600" />
       </Card>
 
@@ -52,7 +52,7 @@ export default function Hedging() {
           </ResponsiveContainer>
         </Card>
         <Card title="STEEL Price Forecast">
-          <p className="text-xs text-ink-muted mb-3 -mt-1">Monthly avg/min/max â€” Prophet when available, numpy fallback otherwise</p>
+          <p className="text-xs text-ink-muted mb-3 -mt-1">Monthly avg/min/max Ã¢â‚¬â€ Prophet when available, numpy fallback otherwise</p>
           <ResponsiveContainer width="100%" height={224}>
             <LineChart data={fc}>
               <CartesianGrid stroke="#e5e9f0" strokeDasharray="3 3" />

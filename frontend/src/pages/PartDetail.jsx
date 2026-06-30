@@ -1,7 +1,7 @@
-﻿import { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { fetchPartDetail, fetchPartDemand } from "../api/client";
-import LoadingSpinner from "../components/LoadingSpinner";
+import { StatsRowSkeleton, ChartSkeleton } from "../components/ui";
 import { PageHeader, Stat, Card } from "../components/ui";
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, ReferenceLine } from "recharts";
 
@@ -14,7 +14,7 @@ export default function PartDetail() {
     fetchPartDetail(partNumber).then(setP);
     fetchPartDemand(partNumber).then(setDem).catch(() => {});
   }, [partNumber]);
-  if (!p) return <LoadingSpinner message="Simulating..." />;
+  if (!p) return <div className="space-y-6"><StatsRowSkeleton count={4} /><ChartSkeleton height={320} /></div>;
 
   const data = p.products.map((v, w) => ({ week: w, products: v }));
   return (

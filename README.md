@@ -1,112 +1,91 @@
-# SupplyLens
+﻿# SupplyLens
 
-**Supply Chain Risk Intelligence Platform for medical device distribution.**
+**AI-powered supply-chain risk intelligence for commodity & manufacturing operations.**
 
-SupplyLens is a decision-support system — not a general chatbot — that consolidates inventory, supplier performance, and incident history into one control tower, and layers an AI analyst on top that answers operational questions and recommends ranked actions, grounded exclusively in live operational data.
+SupplyLens is a decision-support platform - not a general chatbot - that consolidates inventory, supplier performance, demand forecasts, and commodity prices into one control tower, then layers an AI analyst that explains risk and recommends ranked, executable actions, grounded exclusively in live operational data.
 
-A stockout of surgical gloves, IV catheters, or sterile drapes doesn't just lose a sale — it delays procedures and damages hospital relationships worth millions. SupplyLens shifts risk management from **reactive** (discover stockouts after they happen) to **proactive** (surface risk before the lead-time window closes).
+It shifts supply-chain management from **reactive** (discover stockouts after they happen) to **proactive** (surface and resolve risk before the lead-time window closes), across plants in Boston, Chicago, and Seattle.
 
-## Who it's for
-- **Operations Manager** — morning dashboard showing exactly what needs attention today; cuts a 2-hour ERP pull to a sub-60-second review.
-- **Procurement Buyer** — supplier health and incident history at the point of decision; fewer reactive emergency orders.
-- **Site Manager** — site-filtered risk view and rebalancing questions ("what can I pull from Chicago to cover Boston this week?").
+## Modules
+- **Today** - daily AI risk briefing, top critical items, one-click resolve, and a natural-language "Ask AI" box.
+- **Risk Intelligence** - SKU stockout risk scoring + supplier reliability, heatmap, and a filterable SKU table.
+- **Inventory Engine** - 52-week over/understock simulation, worst-offender lists, warehouse pallet load, demand forecasting with seasonality, and CSV/XLSX part import.
+- **Hedging Planner** - commodity procurement: front-loaded vs systematic strategies, forecast-fed pricing, hedged-vs-spot, and an "Amount Saved" KPI.
+- **Actions** - tracked, tenant-scoped log of executed POs and stock transfers.
+- **AI Analyst** - grounded chat across every module's live data.
 
-## What it does
-1. **Risk synthesis** — multi-dimensional CRITICAL/HIGH/MEDIUM/LOW score per SKU per site from stock, demand, lead time, criticality, and supplier reliability.
-2. **Supplier intelligence** — live on-time rates, lead times, contract tier, and 12-month incident history surfaced at the point of decision.
-3. **AI decision support** — every chat query injects live data into the prompt, so answers are computed from real inventory state, never hallucinated. Recommendations are ranked: EXPEDITE / REBALANCE / SUBSTITUTE / STANDARD ORDER / DEFER.
+## How the AI works
+Every AI call injects the live database state into the model prompt, so answers are computed from real inventory/supplier data and never hallucinated. It uses **Azure OpenAI (gpt-5-mini)** when configured, and falls back to deterministic logic when not - so the app always works. Responses are cached briefly and run at `reasoning_effort=minimal` for sub-3-second latency.
 
 ## Risk scoring
-- **Days of Supply** = Current Stock ÷ Avg Daily Demand
-- **Buffer Days** = Days of Supply − Lead Time (negative = stockout is inevitable without emergency action)
+- **Days of Supply** = Current Stock / Avg Daily Demand
+- **Buffer Days** = Days of Supply - Lead Time (negative = stockout is inevitable without emergency action)
 
 | Risk | Condition | Meaning |
 |---|---|---|
-| CRITICAL | Days of Supply ≤ Lead Time | Stockout before next delivery |
-| HIGH | ≤ Lead Time × 1.5 | Must order now |
-| MEDIUM | ≤ Lead Time × 2.0 | Monitor closely |
-| LOW | > Lead Time × 2.0 | Healthy buffer |
+| CRITICAL | Days of Supply <= Lead Time | Stockout before next delivery |
+| HIGH | <= Lead Time x 1.5 | Must order now |
+| MEDIUM | <= Lead Time x 2.0 | Monitor closely |
+| LOW | > Lead Time x 2.0 | Healthy buffer |
 
 ## Stack
-- **Backend:** FastAPI + Azure SQL Database (pyodbc) + Azure OpenAI
+- **Backend:** FastAPI, SQLite (local) / Azure SQL (prod), Azure OpenAI, JWT auth
 - **Frontend:** React 18 (Vite) + Tailwind CSS + Recharts
-- **Domain:** 3 sites (Boston, Chicago, Seattle), 30 SKUs, 8 suppliers
+- **Security:** JWT login, per-tenant data scoping, env-driven CORS allow-list, per-IP rate limiting
 
-## Modules
-- **Inventory Engine** — 52-week over/understock simulation (~2,500 parts), worst-offender action lists, warehouse pallet load, CSV/XLSX part import. (`/inventory`)
-- **Hedging Planner** — commodity procurement: hedged vs spot-only, strategy split, Amount Saved KPI, Prophet-style price forecast. (`/hedging`)
-- **Risk** — SKU stockout risk + supplier reliability for medical-device distribution. (`/dashboard`)
-- **AI Analyst** — grounded across all modules' live data. (`/chat`)
+## Quick start (local, no Azure required)
+The platform runs entirely on SQLite with a deterministic AI fallback.
 
-## Forecasting
-The hedging price forecaster (per A9) uses **Prophet** when installed; otherwise a numpy trend + yearly/quarterly seasonality fallback with IQR outlier removal — same monthly first/avg/max/min interface. Prophet is optional (heavy build; skip on ARM64).
-
-## Local dev (no Azure required)
-SQLite runs the platform out of the box: `DB_BACKEND=sqlite` (default). Seed parts with `python backend/inventory/seed_parts.py`. Set `DB_BACKEND=azure` for production.
-
-## Prerequisites
-- Python 3.11+ · Node.js 18+
-- [ODBC Driver 18 for SQL Server](https://learn.microsoft.com/sql/connect/odbc/download-odbc-driver-for-sql-server)
-- An Azure SQL Database instance
-- An Azure OpenAI resource with a deployed model (e.g. `gpt-4o`)
-
-## Setup
-
-### 1. Database — Azure SQL
 ```bash
-sqlcmd -S your-server.database.windows.net -d supplylens -U <admin> -P <password> -i backend/schema.sql
-```
-
-### 2. Backend
-```bash
+# 1. Backend
 cd backend
-pip install -r requirements.txt
-cp .env.example .env   # fill in Azure SQL + Azure OpenAI values
+pip install fastapi uvicorn python-dotenv pydantic numpy openpyxl python-multipart PyJWT
+python data/seed_risk.py        # commodity/manufacturing risk + decision data
+python inventory/seed_parts.py  # 120 sample parts
+python data/seed_users.py       # demo login
 uvicorn main:app --reload --port 8000
-```
 
-### 3. Seed data (first time)
-```bash
-cd backend/data
-python seed_data.py     # generates CSVs
-python import_data.py   # imports into Azure SQL
-```
-
-### 4. Frontend
-```bash
+# 2. Frontend (new terminal)
 cd frontend
 npm install
-npm run dev             # http://localhost:5173
+npm run dev                     # http://localhost:5173
 ```
 
-## Environment variables (`backend/.env`)
+**Demo login:** `admin@supplylens.io` / `demo1234`
+
+### Optional: enable live AI
+Create `backend/.env` from `.env.example` and set your Azure OpenAI values:
 ```
-# Azure OpenAI
-AZURE_OPENAI_ENDPOINT=https://your-resource.openai.azure.com/
-AZURE_OPENAI_API_KEY=your_azure_openai_key_here
-AZURE_OPENAI_DEPLOYMENT=gpt-4o
-AZURE_OPENAI_API_VERSION=2024-06-01
+AZURE_OPENAI_ENDPOINT=https://<resource>.services.ai.azure.com
+AZURE_OPENAI_API_KEY=<key>
+AZURE_OPENAI_DEPLOYMENT=gpt-5-mini
+AZURE_OPENAI_API_VERSION=preview
+```
+Without a key, the AI features degrade gracefully to deterministic summaries.
 
-# Azure SQL Database
-AZURE_SQL_SERVER=your-server.database.windows.net
-AZURE_SQL_DATABASE=supplylens
-AZURE_SQL_USER=your_admin_user
-AZURE_SQL_PASSWORD=your_password
-AZURE_SQL_DRIVER=ODBC Driver 18 for SQL Server
+## Production (Azure)
+Set `DB_BACKEND=azure` and provide Azure SQL credentials in `.env`, then run `backend/schema.sql` against the database and `python data/import_data.py` to load CSVs. Install `pyodbc` (needs ODBC Driver 18) and `openai`. Lock CORS via `ALLOWED_ORIGINS` and set a strong `JWT_SECRET`.
+
+## Configuration (`backend/.env`)
+| Var | Purpose |
+|---|---|
+| `DB_BACKEND` | `sqlite` (default) or `azure` |
+| `JWT_SECRET` / `JWT_TTL_HOURS` | Auth token signing + lifetime |
+| `AZURE_OPENAI_*` | Live AI (optional) |
+| `AZURE_OPENAI_REASONING_EFFORT` | `minimal` (fast) .. `high` |
+| `ALLOWED_ORIGINS` | Comma-separated CORS allow-list |
+| `RATE_LIMIT_PER_MIN` | Per-IP request cap (default 240) |
+
+## Testing
+```bash
+cd backend && python -m pytest -q     # 23 tests: engines, AI fallback, auth
 ```
 
-The frontend reads `VITE_API_URL` from `frontend/.env.local` (defaults to `http://localhost:8000/api`).
-
-## API endpoints
-- `GET /api/dashboard-stats` — headline KPIs
-- `GET /api/top-risks?limit=10` — highest-risk SKUs
-- `GET /api/risk-summary?site=&risk_level=&category=` — full SKU risk table
-- `GET /api/risk-by-site` — risk counts per site (heatmap)
-- `GET /api/suppliers` — suppliers with on-time rates and incident counts
-- `GET /api/incidents?supplier_id=` — supplier incidents
-- `POST /api/chat` — AI analyst, grounded on live data
-
-Health check: `curl http://localhost:8000/api/dashboard-stats`
-
-## Known V1 limitations
-- Uses average demand (no variance/seasonality), ignores in-transit POs, treats sites independently, and prioritizes by operational severity not cost. See the business doc for the V1.5–V3 roadmap.
+## Key API endpoints
+All `/api/*` data routes require a bearer token (`POST /api/auth/login`).
+- `GET /api/today` - daily risk summary
+- `GET /api/ai/briefing` / `POST /api/ai/ask` / `GET /api/ai/explain` - AI copilot
+- `GET /api/risk-summary` / `top-risks` / `risk-by-site` / `suppliers` - risk intelligence
+- `GET /api/inventory/parts` / `part/{id}` / `part/{id}/demand` / `worst` - inventory engine
+- `GET /api/hedging/scenario` / `forecast` - hedging planner
+- `POST /api/actions/create-po` / `transfer` ; `GET /api/actions/status` - execution
