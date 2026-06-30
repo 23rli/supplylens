@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from database import get_ai_context
 from ai.prompt_builder import build_system_prompt
-from ai.claude_client import call_claude
+from ai.llm import chat as llm_chat
 
 router = APIRouter()
 
@@ -18,10 +18,10 @@ class ChatResponse(BaseModel):
 def chat(request: ChatRequest) -> ChatResponse:
     """
     Core AI endpoint.
-    1. Pulls live data from MySQL
-    2. Builds grounded system prompt
-    3. Calls Claude API with full conversation history
-    4. Returns response
+    1. Pulls live data from the database
+    2. Builds a grounded system prompt
+    3. Calls the LLM with the full conversation history
+    4. Returns the response
     """
     try:
         # Pull live data
@@ -30,13 +30,14 @@ def chat(request: ChatRequest) -> ChatResponse:
         # Build system prompt with live data injected
         system_prompt = build_system_prompt(context)
 
-        # Build messages array: history + new user message
-        messages = request.conversation_history + [
+        # Build messages array: system prompt + history + new user message
+        messages = [{"role": "system", "content": system_prompt}]
+        messages += request.conversation_history + [
             {"role": "user", "content": request.message}
         ]
 
-        # Call Claude
-        response_text = call_claude(system_prompt, messages)
+        # Call the LLM
+        response_text = llm_chat(messages, max_tokens=1500)
 
         from datetime import datetime
         return ChatResponse(

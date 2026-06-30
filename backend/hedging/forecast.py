@@ -1,5 +1,5 @@
 """
-Price forecasting engine (REQUIREMENTS_SPEC A9). One fit per oil over daily prices,
+Price forecasting engine. One fit per commodity over daily prices,
 output monthly first/avg/max/min. Uses Prophet if installed; otherwise a numpy
 trend + yearly + quarterly seasonality fallback. Same interface either way.
 """

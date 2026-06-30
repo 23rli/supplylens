@@ -1,8 +1,9 @@
 """
 52-Week Inventory Overstock/Understock Simulation Engine.
 
-Pure, deterministic functions — no DB, no IO. One part in, weekly series out.
-Re-implements the spreadsheet logic from REQUIREMENTS_SPEC Part B (B3/B5).
+Pure, deterministic functions - no DB, no IO. One part in, weekly series out.
+Projects each part's stock week by week using forecast demand, lead time,
+safety stock, and EOQ.
 """
 from __future__ import annotations
 import math

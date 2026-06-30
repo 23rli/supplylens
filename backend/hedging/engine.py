@@ -1,5 +1,5 @@
 ﻿"""
-Commodity Procurement & Hedging engine (REQUIREMENTS_SPEC Part A).
+Commodity Procurement & Hedging engine.
 
 Pure & deterministic. The two strategies now genuinely differ by TIMING, so the
 strategy split changes the blended price (and therefore the savings):
