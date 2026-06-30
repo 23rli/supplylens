@@ -1,4 +1,4 @@
-﻿"""Seed a SQLite commodity & manufacturing risk dataset + decision tables for local dev.
+"""Seed a SQLite commodity & manufacturing risk dataset + decision tables for local dev.
 Run: python data/seed_risk.py"""
 import random, sqlite3
 from pathlib import Path
@@ -28,7 +28,8 @@ CREATE TABLE IF NOT EXISTS suppliers (supplier_id TEXT PRIMARY KEY, supplier_nam
 CREATE TABLE IF NOT EXISTS sku_risk_summary (sku_id TEXT, sku_name TEXT, site_id TEXT, category TEXT,
   current_stock INT, avg_daily_demand REAL, lead_time_days INT, primary_supplier_id TEXT, unit_cost REAL,
   days_of_supply REAL, buffer_days REAL, risk_level TEXT, recommended_action TEXT);
-CREATE TABLE IF NOT EXISTS actions (id INTEGER PRIMARY KEY AUTOINCREMENT, sku_id TEXT, site_id TEXT,
+DROP TABLE IF EXISTS actions;
+CREATE TABLE actions (id INTEGER PRIMARY KEY AUTOINCREMENT, tenant_id TEXT DEFAULT 'demo', sku_id TEXT, site_id TEXT,
   action_type TEXT, label TEXT, cost REAL, benefit REAL, status TEXT DEFAULT 'pending', created_at TEXT);
 CREATE TABLE IF NOT EXISTS decision_logs (id INTEGER PRIMARY KEY AUTOINCREMENT, sku_id TEXT, site_id TEXT,
   detail TEXT, created_at TEXT);

@@ -1,7 +1,8 @@
-from fastapi import APIRouter, Query, HTTPException
+﻿from fastapi import APIRouter, Query, HTTPException, Depends
 from pydantic import BaseModel
 from decision.store import explain, today
 from decision.execution import create_po, transfer_stock, list_actions
+from auth.store import require_auth
 
 router = APIRouter()
 
@@ -20,13 +21,13 @@ class ExecReq(BaseModel):
     sku: str; site: str; label: str = ""; cost: float = 0; benefit: float = 0
 
 @router.post("/actions/create-po")
-def po(r: ExecReq):
-    return create_po(r.sku, r.site, r.label or "Expedite PO", r.cost, r.benefit)
+def po(r: ExecReq, claims: dict = Depends(require_auth)):
+    return create_po(claims.get("tenant_id"), r.sku, r.site, r.label or "Expedite PO", r.cost, r.benefit)
 
 @router.post("/actions/transfer")
-def transfer(r: ExecReq):
-    return transfer_stock(r.sku, r.site, r.label or "Transfer", r.cost, r.benefit)
+def transfer(r: ExecReq, claims: dict = Depends(require_auth)):
+    return transfer_stock(claims.get("tenant_id"), r.sku, r.site, r.label or "Transfer", r.cost, r.benefit)
 
 @router.get("/actions/status")
-def status():
-    return list_actions()
+def status(claims: dict = Depends(require_auth)):
+    return list_actions(claims.get("tenant_id"))
