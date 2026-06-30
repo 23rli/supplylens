@@ -17,7 +17,7 @@ dist/
 # Generated data files (don't commit CSVs)
 backend/data/*.csv
 
-# Local databases — may contain confidential customer data, never commit
+# Local databases - may contain confidential customer data, never commit
 *.db
 *.sqlite
 *.sqlite3

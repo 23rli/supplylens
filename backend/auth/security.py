@@ -10,10 +10,18 @@ from datetime import datetime, timedelta, timezone
 
 import jwt
 
-JWT_SECRET = os.getenv("JWT_SECRET", "dev-insecure-change-me")
+_DEFAULT_SECRET = "dev-insecure-change-me"
+JWT_SECRET = os.getenv("JWT_SECRET", _DEFAULT_SECRET)
 JWT_ALG = "HS256"
 JWT_TTL_HOURS = int(os.getenv("JWT_TTL_HOURS", "12"))
 _PBKDF2_ROUNDS = 200000
+
+# Fail fast in production if the signing secret was never overridden.
+if JWT_SECRET == _DEFAULT_SECRET and os.getenv("ENV", "").lower() in ("prod", "production"):
+    raise RuntimeError(
+        "JWT_SECRET is set to the insecure default in a production environment. "
+        "Set a strong JWT_SECRET environment variable before starting the server."
+    )
 
 
 def hash_password(password: str) -> str:

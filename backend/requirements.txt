@@ -1,12 +1,13 @@
-fastapi==0.111.0
+﻿fastapi==0.111.0
 uvicorn==0.29.0
-pyodbc==5.1.0          # Azure SQL (production only; local dev uses SQLite)
-openai==1.30.5         # Azure OpenAI (AI analyst only)
 python-dotenv==1.0.1
 pydantic==2.7.1
-pytest==8.2.0
-numpy==1.26.4          # forecasting fallback
-openpyxl==3.1.2        # xlsx import
-python-multipart==0.0.9
-PyJWT==2.8.0           # auth tokens
-prophet==1.1.5         # optional: high-accuracy forecasts (heavy build)
+numpy==1.26.4
+openpyxl==3.1.2          # xlsx import
+python-multipart==0.0.9  # file upload
+PyJWT==2.8.0             # auth tokens
+pyodbc==5.1.0            # Azure SQL (prod; local dev uses SQLite)
+openai==1.30.5           # Azure OpenAI (optional; deterministic fallback otherwise)
+pytest==8.2.0            # dev only
+# Optional, heavy build (numpy fallback is used otherwise):
+# prophet==1.1.5
